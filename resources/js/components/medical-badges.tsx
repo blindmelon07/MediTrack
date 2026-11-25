@@ -1,7 +1,15 @@
+import { CircleAlert, CircleCheck, Clock } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { optionLabel } from '@/lib/medical';
+import { formatDate, optionLabel } from '@/lib/medical';
 import { cn } from '@/lib/utils';
-import type { Clearance, FollowUp, Option } from '@/types';
+import type {
+    AnnualCheckStatus,
+    AnnualCheckSummary,
+    Clearance,
+    FollowUp,
+    Option,
+} from '@/types';
 
 const resultTones: Record<string, string> = {
     normal: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
@@ -58,6 +66,50 @@ export function ClearanceBadge({ clearance }: { clearance: Clearance }) {
             )}
         >
             {clearance.label}
+        </Badge>
+    );
+}
+
+const annualCheckDisplay: Record<
+    AnnualCheckStatus,
+    { label: string; icon: LucideIcon; tone: string }
+> = {
+    never: {
+        label: 'Never examined',
+        icon: CircleAlert,
+        tone: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
+    },
+    overdue: {
+        label: 'Overdue',
+        icon: CircleAlert,
+        tone: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
+    },
+    due_soon: {
+        label: 'Due soon',
+        icon: Clock,
+        tone: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
+    },
+    up_to_date: {
+        label: 'Up to date',
+        icon: CircleCheck,
+        tone: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+    },
+};
+
+/**
+ * Where an employee stands on the annual exam schedule, shown with an icon and words so it never relies on color alone.
+ */
+export function AnnualCheckBadge({ summary }: { summary: AnnualCheckSummary }) {
+    const display = annualCheckDisplay[summary.status];
+    const Icon = display.icon;
+
+    return (
+        <Badge className={cn('border-transparent', display.tone)}>
+            <Icon aria-hidden />
+            {display.label}
+            {summary.due_on && summary.status !== 'up_to_date'
+                ? ` · ${formatDate(summary.due_on)}`
+                : ''}
         </Badge>
     );
 }

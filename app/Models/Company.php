@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Carbon;
 
 /**
@@ -31,6 +32,16 @@ class Company extends Model
     public function employees(): HasMany
     {
         return $this->hasMany(Employee::class);
+    }
+
+    /**
+     * Get the follow-ups of the company's employees.
+     *
+     * @return HasManyThrough<FollowUp, Employee, $this>
+     */
+    public function followUps(): HasManyThrough
+    {
+        return $this->hasManyThrough(FollowUp::class, Employee::class);
     }
 
     /**

@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\HealthCheckType;
 use App\Enums\Role;
+use Carbon\CarbonImmutable;
 use Database\Factories\EmployeeFactory;
 use Illuminate\Database\Eloquent\Attributes\Appends;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -133,6 +135,117 @@ class Employee extends Model
         }
 
         $query->where('user_id', $user->id);
+    }
+
+    /**
+     * Add the date of the employee's most recent full exam as `last_annual_check_on`.
+     *
+     * @param  Builder<Employee>  $query
+     */
+    #[Scope]
+    protected function withLastAnnualCheck(Builder $query): void
+    {
+        $query->withMax(
+            ['healthChecks as last_annual_check_on' => fn (Builder $query) => $query->whereIn('type', HealthCheckType::annualCheckTypes())],
+            'checked_on',
+        );
+    }
+
+    /**
+     * Limit the query to active employees whose annual exam is past due or due within the reminder window.
+     *
+     * @param  Builder<Employee>  $query
+     */
+    #[Scope]
+    protected function dueForAnnualCheck(Builder $query): void
+    {
+        $this->withoutAnnualCheckAfter($query->active(), '>', self::annualCheckDueSoonCutoff());
+    }
+
+    /**
+     * Limit the query to active employees whose annual exam is past due (or who never had one).
+     *
+     * @param  Builder<Employee>  $query
+     */
+    #[Scope]
+    protected function overdueForAnnualCheck(Builder $query): void
+    {
+        // An exam exactly one interval ago is due today, which is not yet overdue.
+        $this->withoutAnnualCheckAfter($query->active(), '>=', self::annualCheckOverdueCutoff());
+    }
+
+    /**
+     * Get the date the next annual exam is due, or null when the employee has never had one (due now).
+     * Requires the `withLastAnnualCheck` scope.
+     */
+    public function nextAnnualCheckDueOn(): ?CarbonImmutable
+    {
+        $lastCheckedOn = $this->getAttribute('last_annual_check_on');
+
+        if ($lastCheckedOn === null) {
+            return null;
+        }
+
+        return CarbonImmutable::parse($lastCheckedOn)
+            ->startOfDay()
+            ->addMonthsNoOverflow((int) config('meditrack.annual_check.interval_months'));
+    }
+
+    /**
+     * Describe where the employee stands on the annual schedule. Requires the `withLastAnnualCheck` scope.
+     *
+     * @return array{status: 'never'|'overdue'|'due_soon'|'up_to_date', last_checked_on: string|null, due_on: string|null}
+     */
+    public function annualCheckSummary(): array
+    {
+        $dueOn = $this->nextAnnualCheckDueOn();
+        $reminderStartsOn = $dueOn?->subDays((int) config('meditrack.annual_check.reminder_days'));
+
+        $status = match (true) {
+            $dueOn === null => 'never',
+            $dueOn->lt(today()) => 'overdue',
+            $reminderStartsOn->lte(today()) => 'due_soon',
+            default => 'up_to_date',
+        };
+
+        $lastCheckedOn = $this->getAttribute('last_annual_check_on');
+
+        return [
+            'status' => $status,
+            'last_checked_on' => $lastCheckedOn === null ? null : CarbonImmutable::parse($lastCheckedOn)->toDateString(),
+            'due_on' => $dueOn?->toDateString(),
+        ];
+    }
+
+    /**
+     * Get the exam date before which an employee is overdue today.
+     */
+    public static function annualCheckOverdueCutoff(): CarbonImmutable
+    {
+        return CarbonImmutable::today()->subMonthsNoOverflow((int) config('meditrack.annual_check.interval_months'));
+    }
+
+    /**
+     * Get the exam date on or before which an employee is due within the reminder window.
+     */
+    public static function annualCheckDueSoonCutoff(): CarbonImmutable
+    {
+        return CarbonImmutable::today()
+            ->addDays((int) config('meditrack.annual_check.reminder_days'))
+            ->subMonthsNoOverflow((int) config('meditrack.annual_check.interval_months'));
+    }
+
+    /**
+     * Keep employees with no full exam dated after (or on, with '>=') the cutoff.
+     *
+     * @param  Builder<Employee>  $query
+     * @param  '>'|'>='  $operator
+     */
+    private function withoutAnnualCheckAfter(Builder $query, string $operator, CarbonImmutable $cutoff): void
+    {
+        $query->whereDoesntHave('healthChecks', fn (Builder $query) => $query
+            ->whereIn('type', HealthCheckType::annualCheckTypes())
+            ->whereDate('checked_on', $operator, $cutoff));
     }
 
     /**

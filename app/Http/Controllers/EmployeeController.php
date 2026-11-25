@@ -34,6 +34,7 @@ class EmployeeController extends Controller
         $search = $request->string('search')->trim()->toString();
         $status = $request->string('status', 'active')->toString();
         $companyId = $showMedicalResults ? ($request->integer('company_id') ?: null) : null;
+        $annual = $request->string('annual')->toString();
 
         $employees = Employee::query()
             ->visibleTo($user)
@@ -41,6 +42,9 @@ class EmployeeController extends Controller
             ->when($status === 'active', fn ($query) => $query->active())
             ->when($status === 'inactive', fn ($query) => $query->where('is_active', false))
             ->when($companyId, fn ($query, int $companyId) => $query->where('company_id', $companyId))
+            ->when($annual === 'due', fn ($query) => $query->dueForAnnualCheck())
+            ->when($annual === 'overdue', fn ($query) => $query->overdueForAnnualCheck())
+            ->withLastAnnualCheck()
             ->with(['company:id,name', 'latestHealthCheck'])
             ->withCount([
                 'followUps as pending_follow_ups_count' => fn ($query) => $query->where('status', FollowUpStatus::Pending),
@@ -54,7 +58,7 @@ class EmployeeController extends Controller
 
         return Inertia::render('employees/index', [
             'employees' => $employees,
-            'filters' => ['search' => $search, 'status' => $status, 'company_id' => $companyId],
+            'filters' => ['search' => $search, 'status' => $status, 'company_id' => $companyId, 'annual' => $annual],
             'companies' => $showMedicalResults ? Company::query()->orderBy('name')->get(['id', 'name']) : [],
             'healthCheckTypes' => HealthCheckType::options(),
             'healthCheckResults' => HealthCheckResult::options(),
@@ -93,6 +97,11 @@ class EmployeeController extends Controller
     {
         Gate::authorize('view', $employee);
 
+        $employee->loadMax(
+            ['healthChecks as last_annual_check_on' => fn ($query) => $query->whereIn('type', HealthCheckType::annualCheckTypes())],
+            'checked_on',
+        );
+
         $canViewMedicalRecords = Gate::allows('viewMedicalRecords', $employee);
 
         $healthChecks = $employee->healthChecks()
@@ -107,6 +116,7 @@ class EmployeeController extends Controller
 
         return Inertia::render('employees/show', [
             'employee' => $employee->load('company:id,name'),
+            'annualCheck' => $employee->annualCheckSummary(),
             'canViewMedicalRecords' => $canViewMedicalRecords,
             'can' => [
                 'update' => Gate::allows('update', $employee),
@@ -159,6 +169,7 @@ class EmployeeController extends Controller
             'company' => $employee->company?->name,
             'pending_follow_ups_count' => $employee->pending_follow_ups_count,
             'overdue_follow_ups_count' => $employee->overdue_follow_ups_count,
+            'annual_check' => $employee->annualCheckSummary(),
             'latest_check' => $latestCheck === null ? null : [
                 'checked_on' => $latestCheck->checked_on->toDateString(),
                 'type' => $latestCheck->type->value,

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '@/components/form-field';
 import {
+    AnnualCheckBadge,
     ClearanceBadge,
     FollowUpStatusBadge,
     ResultBadge,
@@ -25,6 +26,7 @@ import {
     show as showHealthCheck,
 } from '@/routes/health-checks';
 import type {
+    AnnualCheckSummary,
     ClearanceSummary,
     Employee,
     FollowUp,
@@ -36,6 +38,7 @@ import type {
 
 type SharedProps = {
     employee: Employee;
+    annualCheck: AnnualCheckSummary;
     can: { update: boolean; manageMedicalRecords: boolean };
     healthCheckTypes: Option[];
     healthCheckResults: ResultOption[];
@@ -72,7 +75,8 @@ function Detail({
 }
 
 export default function EmployeeShow(props: Props) {
-    const { employee, can, healthCheckTypes, followUpStatuses } = props;
+    const { employee, annualCheck, can, healthCheckTypes, followUpStatuses } =
+        props;
 
     setLayoutProps({
         breadcrumbs: [
@@ -163,6 +167,20 @@ export default function EmployeeShow(props: Props) {
                     <Detail label="Email" value={employee.email} />
                     <Detail label="Phone" value={employee.phone} />
                 </dl>
+
+                {employee.is_active && (
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                        <span className="text-muted-foreground">
+                            Annual check
+                        </span>
+                        <AnnualCheckBadge summary={annualCheck} />
+                        <span className="text-muted-foreground">
+                            {annualCheck.last_checked_on
+                                ? `Last exam ${formatDate(annualCheck.last_checked_on)} · next due ${formatDate(annualCheck.due_on)}`
+                                : 'No annual or pre-employment exam on record'}
+                        </span>
+                    </div>
+                )}
 
                 {props.canViewMedicalRecords ? (
                     <MedicalHistory

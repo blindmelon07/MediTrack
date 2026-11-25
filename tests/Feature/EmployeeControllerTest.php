@@ -114,6 +114,23 @@ describe('index', function () {
             ->where('companies', []));
     });
 
+    test('filters employees whose annual check is due and shows where each stands', function () {
+        $this->travelTo('2026-11-25');
+        $due = Employee::factory()->create();
+        HealthCheck::factory()->for($due)->create(['type' => 'annual_physical', 'checked_on' => '2025-12-01']);
+        $upToDate = Employee::factory()->create();
+        HealthCheck::factory()->for($upToDate)->create(['type' => 'annual_physical', 'checked_on' => '2026-08-01']);
+
+        $response = $this->actingAs(User::factory()->medicalStaff()->create())
+            ->get(route('employees.index', ['annual' => 'due']));
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->has('employees.data', 1)
+            ->where('employees.data.0.id', $due->id)
+            ->where('employees.data.0.annual_check.status', 'due_soon')
+            ->where('employees.data.0.annual_check.due_on', '2026-12-01'));
+    });
+
     test('forbids employees from listing employees', function () {
         $response = $this->actingAs(User::factory()->create())->get(route('employees.index'));
 

@@ -27,6 +27,16 @@ enum HealthCheckType: string
     }
 
     /**
+     * Get the types that count as a full exam for the annual schedule.
+     *
+     * @return array<int, self>
+     */
+    public static function annualCheckTypes(): array
+    {
+        return [self::AnnualPhysical, self::PreEmployment];
+    }
+
+    /**
      * Get every type as a value and label pair for select inputs.
      *
      * @return array<int, array{value: string, label: string}>

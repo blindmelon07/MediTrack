@@ -62,6 +62,7 @@ export type EmployeeListRow = {
     company: string | null;
     pending_follow_ups_count: number;
     overdue_follow_ups_count: number;
+    annual_check: AnnualCheckSummary;
     latest_check: {
         checked_on: string;
         type: string;
@@ -151,4 +152,12 @@ export type Paginated<T> = {
     to: number | null;
     prev_page_url: string | null;
     next_page_url: string | null;
+};
+
+export type AnnualCheckStatus = 'never' | 'overdue' | 'due_soon' | 'up_to_date';
+
+export type AnnualCheckSummary = {
+    status: AnnualCheckStatus;
+    last_checked_on: string | null;
+    due_on: string | null;
 };

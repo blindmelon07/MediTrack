@@ -91,6 +91,34 @@ class FollowUp extends Model
     }
 
     /**
+     * Limit the query to pending follow-ups due from today through the given number of days ahead.
+     *
+     * @param  Builder<FollowUp>  $query
+     */
+    #[Scope]
+    protected function dueWithinDays(Builder $query, int $days): void
+    {
+        $query->where('status', FollowUpStatus::Pending)
+            ->whereDate('due_on', '>=', today())
+            ->whereDate('due_on', '<=', today()->addDays($days));
+    }
+
+    /**
+     * Limit the query to follow-ups of employees the user is allowed to see.
+     *
+     * @param  Builder<FollowUp>  $query
+     */
+    #[Scope]
+    protected function forEmployeesVisibleTo(Builder $query, User $user): void
+    {
+        if ($user->managesHealthRecords()) {
+            return;
+        }
+
+        $query->whereHas('employee', fn (Builder $query) => $query->visibleTo($user));
+    }
+
+    /**
      * Get the employee the follow-up is for.
      *
      * @return BelongsTo<Employee, $this>

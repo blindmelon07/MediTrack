@@ -1,7 +1,11 @@
 import { Form, Head, Link, usePage } from '@inertiajs/react';
 import { Plus, Search } from 'lucide-react';
 import { PageHeader } from '@/components/form-field';
-import { ClearanceBadge, ResultBadge } from '@/components/medical-badges';
+import {
+    AnnualCheckBadge,
+    ClearanceBadge,
+    ResultBadge,
+} from '@/components/medical-badges';
 import Pagination from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,7 +29,12 @@ export default function EmployeeIndex({
     healthCheckResults,
 }: {
     employees: Paginated<EmployeeListRow>;
-    filters: { search: string; status: string; company_id: number | null };
+    filters: {
+        search: string;
+        status: string;
+        company_id: number | null;
+        annual: string;
+    };
     companies: Company[];
     healthCheckTypes: Option[];
     healthCheckResults: ResultOption[];
@@ -95,6 +104,19 @@ export default function EmployeeIndex({
                         <option value="inactive">Inactive</option>
                         <option value="all">All</option>
                     </NativeSelect>
+                    <NativeSelect
+                        name="annual"
+                        defaultValue={filters.annual}
+                        aria-label="Annual check"
+                        className="sm:w-48"
+                        onChange={(event) =>
+                            event.currentTarget.form?.requestSubmit()
+                        }
+                    >
+                        <option value="">Any annual status</option>
+                        <option value="due">Annual check due</option>
+                        <option value="overdue">Annual check overdue</option>
+                    </NativeSelect>
                     <Button type="submit" variant="secondary">
                         <Search /> Search
                     </Button>
@@ -117,6 +139,9 @@ export default function EmployeeIndex({
                                 </th>
                                 <th className="px-4 py-3 font-medium">
                                     Last health check
+                                </th>
+                                <th className="px-4 py-3 font-medium">
+                                    Annual check
                                 </th>
                                 <th className="px-4 py-3 font-medium">
                                     Follow-ups
@@ -205,6 +230,17 @@ export default function EmployeeIndex({
                                         )}
                                     </td>
                                     <td className="px-4 py-3">
+                                        {employee.is_active ? (
+                                            <AnnualCheckBadge
+                                                summary={employee.annual_check}
+                                            />
+                                        ) : (
+                                            <span className="text-muted-foreground">
+                                                —
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="px-4 py-3">
                                         <div className="flex flex-wrap gap-1">
                                             {employee.overdue_follow_ups_count >
                                                 0 && (
@@ -235,7 +271,7 @@ export default function EmployeeIndex({
                             {employees.data.length === 0 && (
                                 <tr>
                                     <td
-                                        colSpan={showCompany ? 5 : 4}
+                                        colSpan={showCompany ? 6 : 5}
                                         className="px-4 py-10 text-center text-muted-foreground"
                                     >
                                         No employees found.
