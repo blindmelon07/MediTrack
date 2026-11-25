@@ -16,13 +16,16 @@ export type Role = 'admin' | 'medical_staff' | 'hr' | 'employee';
 
 export type Permissions = {
     viewEmployees: boolean;
+    viewAppointments: boolean;
     manageHealthRecords: boolean;
     manageUsers: boolean;
+    viewAuditLog: boolean;
     ownEmployeeId: number | null;
 };
 
 export type Auth = {
     user: User;
+    roleLabel: string | null;
     can: Permissions;
 };
 

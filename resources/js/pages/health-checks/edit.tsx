@@ -1,7 +1,10 @@
-import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Form, Head, setLayoutProps } from '@inertiajs/react';
+import DocumentPreviewPane from '@/components/document-preview-pane';
 import { PageHeader } from '@/components/form-field';
-import HealthCheckFormFields from '@/components/health-check-form-fields';
-import { Button } from '@/components/ui/button';
+import FormSteps from '@/components/form-steps';
+import { healthCheckSteps } from '@/components/health-check-form-fields';
+import { documentEmployee } from '@/components/health-check-document';
+import { useLiveFormValues } from '@/hooks/use-live-form-values';
 import { formatDate } from '@/lib/medical';
 import { edit, index, show, update } from '@/routes/health-checks';
 import type {
@@ -33,38 +36,48 @@ export default function HealthCheckEdit({
         ],
     });
 
+    const { values, bind } = useLiveFormValues();
+    const employee = employees.find(
+        (option) => String(option.id) === values.employee_id,
+    );
+
     return (
         <>
             <Head title="Edit health check" />
-            <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-6">
+            <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
                 <PageHeader
                     title="Edit health check"
                     description="To add files or follow-ups, use the buttons on the health check page."
                 />
 
-                <Form {...update.form(healthCheck.id)} className="space-y-6">
-                    {({ processing, errors }) => (
-                        <>
-                            <HealthCheckFormFields
-                                healthCheck={healthCheck}
-                                employees={employees}
-                                healthCheckTypes={healthCheckTypes}
-                                healthCheckResults={healthCheckResults}
-                                errors={errors}
-                            />
-                            <div className="flex gap-2">
-                                <Button disabled={processing}>
-                                    Save changes
-                                </Button>
-                                <Button variant="outline" asChild>
-                                    <Link href={show(healthCheck.id)}>
-                                        Cancel
-                                    </Link>
-                                </Button>
-                            </div>
-                        </>
-                    )}
-                </Form>
+                <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
+                    <div {...bind}>
+                        <Form {...update.form(healthCheck.id)} noValidate>
+                            {({ processing, errors }) => (
+                                <FormSteps
+                                    errors={errors}
+                                    processing={processing}
+                                    submitLabel="Save changes"
+                                    cancelHref={show(healthCheck.id)}
+                                    steps={healthCheckSteps({
+                                        healthCheck,
+                                        employees,
+                                        healthCheckTypes,
+                                        healthCheckResults,
+                                        errors,
+                                    })}
+                                />
+                            )}
+                        </Form>
+                    </div>
+
+                    <DocumentPreviewPane
+                        values={{ ...values, id: healthCheck.id }}
+                        employee={documentEmployee(employee)}
+                        healthCheckTypes={healthCheckTypes}
+                        healthCheckResults={healthCheckResults}
+                    />
+                </div>
             </div>
         </>
     );

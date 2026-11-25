@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Model;
@@ -23,6 +24,8 @@ use Illuminate\Support\Facades\Storage;
 #[Hidden(['path'])]
 class HealthCheckAttachment extends Model
 {
+    use Auditable;
+
     /**
      * The private disk that stores medical attachments.
      */
@@ -48,6 +51,22 @@ class HealthCheckAttachment extends Model
         return [
             'size' => 'integer',
         ];
+    }
+
+    /**
+     * Describe the file for the audit log.
+     */
+    public function auditLabel(): string
+    {
+        return "file \"{$this->original_name}\" on health check #{$this->health_check_id}";
+    }
+
+    /**
+     * Attachments belong to the employee of their health check.
+     */
+    public function auditEmployeeId(): ?int
+    {
+        return $this->healthCheck?->employee_id;
     }
 
     /**

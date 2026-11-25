@@ -2,7 +2,6 @@
 
 namespace App\Concerns;
 
-use App\Enums\Role;
 use App\Models\Company;
 use App\Models\Employee;
 use App\Rules\PhilippineMobileNumber;
@@ -39,18 +38,6 @@ trait EmployeeValidationRules
             'hired_on' => ['nullable', 'date'],
             'is_active' => ['boolean'],
         ];
-    }
-
-    /**
-     * Pin HR users to their own company so they cannot file employees under another one.
-     */
-    protected function assignHrCompany(): void
-    {
-        $user = $this->user();
-
-        if ($user !== null && $user->hasRole(Role::Hr)) {
-            $this->merge(['company_id' => $user->company_id]);
-        }
     }
 
     /**

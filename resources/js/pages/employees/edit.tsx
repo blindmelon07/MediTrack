@@ -1,7 +1,7 @@
-import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
-import EmployeeFormFields from '@/components/employee-form-fields';
+import { Form, Head, setLayoutProps } from '@inertiajs/react';
+import { employeeSteps } from '@/components/employee-form-fields';
 import { PageHeader } from '@/components/form-field';
-import { Button } from '@/components/ui/button';
+import FormSteps from '@/components/form-steps';
 import { edit, index, show, update } from '@/routes/employees';
 import type { Company, Employee } from '@/types';
 
@@ -23,26 +23,22 @@ export default function EmployeeEdit({
     return (
         <>
             <Head title={`Edit ${employee.full_name}`} />
-            <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-6">
+            <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 p-4 md:p-6">
                 <PageHeader title={`Edit ${employee.full_name}`} />
 
-                <Form {...update.form(employee.id)} className="space-y-6">
+                <Form {...update.form(employee.id)} noValidate>
                     {({ processing, errors }) => (
-                        <>
-                            <EmployeeFormFields
-                                employee={employee}
-                                companies={companies}
-                                errors={errors}
-                            />
-                            <div className="flex gap-2">
-                                <Button disabled={processing}>
-                                    Save changes
-                                </Button>
-                                <Button variant="outline" asChild>
-                                    <Link href={show(employee.id)}>Cancel</Link>
-                                </Button>
-                            </div>
-                        </>
+                        <FormSteps
+                            steps={employeeSteps({
+                                employee,
+                                companies,
+                                errors,
+                            })}
+                            errors={errors}
+                            processing={processing}
+                            submitLabel="Save changes"
+                            cancelHref={show(employee.id)}
+                        />
                     )}
                 </Form>
             </div>

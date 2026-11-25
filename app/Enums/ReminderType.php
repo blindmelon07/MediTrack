@@ -10,6 +10,7 @@ enum ReminderType: string
     case AnnualCheckDueSoon = 'annual_check_due_soon';
     case AnnualCheckDueToday = 'annual_check_due_today';
     case AnnualCheckOverdue = 'annual_check_overdue';
+    case AppointmentTomorrow = 'appointment_tomorrow';
     case StaffDailyDigest = 'staff_daily_digest';
     case HrWeeklyDigest = 'hr_weekly_digest';
 

@@ -2,10 +2,12 @@
 
 namespace Database\Seeders;
 
+use App\Enums\AppointmentPurpose;
 use App\Enums\FollowUpStatus;
 use App\Enums\HealthCheckResult;
 use App\Enums\HealthCheckType;
 use App\Enums\Role;
+use App\Models\Appointment;
 use App\Models\Company;
 use App\Models\Employee;
 use App\Models\FollowUp;
@@ -68,13 +70,22 @@ class DemoSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->today = CarbonImmutable::today();
+
         if (User::query()->where('email', 'admin@meditrack.test')->exists()) {
+            // Demo data from before appointments existed: add just the appointments.
+            if (! Appointment::query()->exists()) {
+                $this->nurse = User::query()->where('email', 'nurse@meditrack.test')->firstOrFail();
+                $this->seedAppointments();
+                $this->command->info('Added demo clinic appointments.');
+
+                return;
+            }
+
             $this->command->warn('Demo data is already loaded (admin@meditrack.test exists). Nothing was changed.');
 
             return;
         }
-
-        $this->today = CarbonImmutable::today();
 
         $employeeLoginName = DB::transaction(function (): string {
             $this->createStaff();
@@ -87,7 +98,10 @@ class DemoSeeder extends Seeder
                 }
             }
 
-            return $this->linkEmployeeAccount();
+            $employeeLoginName = $this->linkEmployeeAccount();
+            $this->seedAppointments();
+
+            return $employeeLoginName;
         });
 
         $this->command->table(['Role', 'Log in with', 'Password'], [
@@ -297,6 +311,41 @@ class DemoSeeder extends Seeder
             'completed_on' => $status === FollowUpStatus::Completed ? $dueOn->toDateString() : null,
             'notes' => $notes,
         ]);
+    }
+
+    /**
+     * Book a few clinic visits today and tomorrow for employees who need to be seen:
+     * overdue annual checks, the overdue blood pressure recheck, and a new hire.
+     */
+    private function seedAppointments(): void
+    {
+        $bookings = [
+            ['GSAC-0003', 0, '09:00', AppointmentPurpose::AnnualCheck],
+            ['GGHI-0005', 0, '10:30', AppointmentPurpose::FollowUp],
+            ['T2-0004', 0, '14:00', AppointmentPurpose::AnnualCheck],
+            ['GGHI-0003', 1, '08:30', AppointmentPurpose::AnnualCheck],
+            ['T2-0005', 1, '09:30', AppointmentPurpose::FollowUp],
+            ['GSAC-0007', 1, '13:30', AppointmentPurpose::Consultation],
+        ];
+
+        foreach ($bookings as [$employeeNumber, $daysAhead, $time, $purpose]) {
+            $employee = Employee::query()->where('employee_number', $employeeNumber)->first();
+
+            if ($employee === null) {
+                continue;
+            }
+
+            $appointment = new Appointment([
+                'employee_id' => $employee->id,
+                'follow_up_id' => $purpose === AppointmentPurpose::FollowUp
+                    ? $employee->followUps()->where('status', FollowUpStatus::Pending)->value('id')
+                    : null,
+                'starts_at' => $this->today->addDays($daysAhead)->format('Y-m-d')." {$time}:00",
+                'purpose' => $purpose,
+            ]);
+            $appointment->booked_by = $this->nurse->id;
+            $appointment->save();
+        }
     }
 
     /**

@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AppointmentStatus;
+use App\Enums\AuditAction;
 use App\Enums\FollowUpStatus;
 use App\Enums\HealthCheckResult;
 use App\Enums\HealthCheckType;
 use App\Http\Requests\StoreHealthCheckRequest;
 use App\Http\Requests\UpdateHealthCheckRequest;
+use App\Models\Appointment;
+use App\Models\AuditLog;
 use App\Models\Employee;
 use App\Models\HealthCheck;
 use App\Models\User;
@@ -106,6 +110,16 @@ class HealthCheckController extends Controller
             return $healthCheck;
         });
 
+        // The employee has been seen, so today's clinic appointment is done.
+        if ($healthCheck->checked_on->isToday()) {
+            Appointment::query()
+                ->scheduled()
+                ->where('employee_id', $healthCheck->employee_id)
+                ->whereDate('starts_at', today())
+                ->get()
+                ->each(fn (Appointment $appointment) => $appointment->update(['status' => AppointmentStatus::Completed]));
+        }
+
         /** @var array<int, UploadedFile> $files */
         $files = $request->file('attachments', []);
 
@@ -125,8 +139,11 @@ class HealthCheckController extends Controller
     {
         Gate::authorize('view', $healthCheck);
 
+        AuditLog::record(AuditAction::Viewed, $healthCheck, 'Viewed '.$healthCheck->auditLabel());
+
         $healthCheck->load([
-            'employee:id,employee_number,first_name,last_name,department,position',
+            'employee:id,employee_number,first_name,last_name,department,position,company_id,birth_date,sex',
+            'employee.company:id,name',
             'recorder:id,name',
             'followUps' => fn ($query) => $query->with('assignee:id,name')->orderBy('due_on'),
             'attachments',

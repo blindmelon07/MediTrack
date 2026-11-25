@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AuditAction;
 use App\Http\Requests\StoreHealthCheckAttachmentRequest;
+use App\Models\AuditLog;
 use App\Models\HealthCheck;
 use App\Models\HealthCheckAttachment;
 use Illuminate\Http\RedirectResponse;
@@ -37,6 +39,8 @@ class HealthCheckAttachmentController extends Controller
     public function show(HealthCheckAttachment $attachment): StreamedResponse
     {
         Gate::authorize('view', $attachment->healthCheck);
+
+        AuditLog::record(AuditAction::Downloaded, $attachment, 'Downloaded '.$attachment->auditLabel());
 
         return Storage::disk(HealthCheckAttachment::DISK)->download($attachment->path, $attachment->original_name);
     }

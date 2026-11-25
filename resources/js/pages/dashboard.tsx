@@ -1,6 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import {
     CalendarClock,
+    CalendarDays,
     CalendarX2,
     ClipboardList,
     FlaskConical,
@@ -10,11 +11,16 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { PageHeader } from '@/components/form-field';
+import { AppointmentStatusBadge } from '@/components/appointment-badges';
 import { AnnualCheckBadge, ResultBadge } from '@/components/medical-badges';
 import StatTile from '@/components/stat-tile';
 import { Button } from '@/components/ui/button';
-import { formatDate, optionLabel } from '@/lib/medical';
+import { formatDate, formatDateTime, optionLabel } from '@/lib/medical';
 import { dashboard } from '@/routes';
+import {
+    create as createAppointment,
+    index as appointmentsIndex,
+} from '@/routes/appointments';
 import {
     index as employeesIndex,
     show as showEmployee,
@@ -87,11 +93,22 @@ type OwnRecord = {
         result: string;
     } | null;
     openFollowUps: { id: number; reason: string; due_on: string }[];
+    nextAppointment: string | null;
+};
+
+type TodayAppointment = {
+    id: number;
+    time: string;
+    purpose: string;
+    status: string;
+    employee: { id: number; full_name: string; employee_number: string };
 };
 
 type Shared = {
     healthCheckTypes: Option[];
     healthCheckResults: ResultOption[];
+    appointmentPurposes: Option[];
+    appointmentStatuses: Option[];
     settings: Settings;
 };
 
@@ -104,6 +121,7 @@ type Props = Shared &
               upcomingFollowUps: AttentionFollowUp[];
               annualChecksDue: AnnualDueRow[];
               awaitingResults: AwaitingResult[];
+              todayAppointments: TodayAppointment[];
               companies: CompanyRow[];
           }
         | {
@@ -283,6 +301,46 @@ function MedicalDashboard(props: Extract<Props, { view: 'medical' }>) {
                 </Panel>
             </div>
 
+            <Panel
+                title={`Today's clinic schedule (${props.todayAppointments.length})`}
+                viewAllHref={appointmentsIndex()}
+                isTruncated
+            >
+                {props.todayAppointments.length === 0 ? (
+                    <EmptyRow>No appointments today.</EmptyRow>
+                ) : (
+                    props.todayAppointments.map((appointment) => (
+                        <Row key={appointment.id}>
+                            <div className="flex min-w-0 items-center gap-3">
+                                <span className="w-16 shrink-0 tabular-nums">
+                                    {appointment.time}
+                                </span>
+                                <div className="min-w-0">
+                                    <Link
+                                        href={showEmployee(
+                                            appointment.employee.id,
+                                        )}
+                                        className="font-medium hover:underline"
+                                    >
+                                        {appointment.employee.full_name}
+                                    </Link>
+                                    <p className="text-xs text-muted-foreground">
+                                        {optionLabel(
+                                            props.appointmentPurposes,
+                                            appointment.purpose,
+                                        )}
+                                    </p>
+                                </div>
+                            </div>
+                            <AppointmentStatusBadge
+                                status={appointment.status}
+                                options={props.appointmentStatuses}
+                            />
+                        </Row>
+                    ))
+                )}
+            </Panel>
+
             <Panel title="By company">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
@@ -458,20 +516,39 @@ function EmployeeDashboard({
         );
     }
 
-    const { annualCheck, latestCheck, openFollowUps } = ownRecord;
+    const { annualCheck, latestCheck, openFollowUps, nextAppointment } =
+        ownRecord;
 
     return (
         <>
             <PageHeader
                 title={`Hello, ${ownRecord.employee.full_name.split(', ').reverse().join(' ')}`}
                 actions={
-                    <Button variant="outline" asChild>
-                        <Link href={showEmployee(ownRecord.employee.id)}>
-                            View my full health record
-                        </Link>
-                    </Button>
+                    <>
+                        <Button asChild>
+                            <Link href={createAppointment()}>
+                                Book clinic appointment
+                            </Link>
+                        </Button>
+                        <Button variant="outline" asChild>
+                            <Link href={showEmployee(ownRecord.employee.id)}>
+                                View my full health record
+                            </Link>
+                        </Button>
+                    </>
                 }
             />
+
+            {nextAppointment && (
+                <Link
+                    href={appointmentsIndex()}
+                    className="flex items-center gap-2 rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900 hover:bg-sky-100 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-200"
+                >
+                    <CalendarDays className="size-4" aria-hidden />
+                    Your next clinic appointment:{' '}
+                    {formatDateTime(nextAppointment)}
+                </Link>
+            )}
 
             <div className="grid gap-6 md:grid-cols-2">
                 <Panel
@@ -550,7 +627,7 @@ function Panel({
     children: ReactNode;
 }) {
     return (
-        <section className="flex flex-col overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
+        <section className="flex flex-col overflow-hidden rounded-xl border border-border bg-card">
             <header className="flex items-start justify-between gap-4 border-b px-4 py-3">
                 <div>
                     <h2 className="text-sm font-medium">{title}</h2>
@@ -676,6 +753,18 @@ function AnnualDueRows({
             </div>
             <div className="flex shrink-0 items-center gap-2">
                 <AnnualCheckBadge summary={row.annual_check} />
+                <Button variant="ghost" size="sm" asChild>
+                    <Link
+                        href={createAppointment({
+                            query: {
+                                employee_id: row.id,
+                                purpose: 'annual_check',
+                            },
+                        })}
+                    >
+                        Book
+                    </Link>
+                </Button>
                 {canRecord && (
                     <Button variant="outline" size="sm" asChild>
                         <Link

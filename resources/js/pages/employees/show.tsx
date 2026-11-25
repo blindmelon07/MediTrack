@@ -1,7 +1,9 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, Link, setLayoutProps, usePage } from '@inertiajs/react';
 import {
+    CalendarDays,
     CalendarPlus,
     ClipboardPlus,
+    History,
     Lock,
     Paperclip,
     Pencil,
@@ -15,7 +17,9 @@ import {
 } from '@/components/medical-badges';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { formatDate, optionLabel } from '@/lib/medical';
+import { formatDate, formatDateTime, optionLabel } from '@/lib/medical';
+import { create as createAppointment } from '@/routes/appointments';
+import { index as auditLogIndex } from '@/routes/audit-logs';
 import { edit, index, show } from '@/routes/employees';
 import {
     create as createFollowUp,
@@ -39,7 +43,13 @@ import type {
 type SharedProps = {
     employee: Employee;
     annualCheck: AnnualCheckSummary;
-    can: { update: boolean; manageMedicalRecords: boolean };
+    can: {
+        update: boolean;
+        manageMedicalRecords: boolean;
+        bookAppointment: boolean;
+    };
+    upcomingAppointments: { id: number; starts_at: string; purpose: string }[];
+    appointmentPurposes: Option[];
     healthCheckTypes: Option[];
     healthCheckResults: ResultOption[];
     followUpStatuses: Option[];
@@ -75,6 +85,7 @@ function Detail({
 }
 
 export default function EmployeeShow(props: Props) {
+    const { auth } = usePage().props;
     const { employee, annualCheck, can, healthCheckTypes, followUpStatuses } =
         props;
 
@@ -106,6 +117,17 @@ export default function EmployeeShow(props: Props) {
                     }
                     actions={
                         <>
+                            {can.bookAppointment && (
+                                <Button variant="outline" asChild>
+                                    <Link
+                                        href={createAppointment({
+                                            query: { employee_id: employee.id },
+                                        })}
+                                    >
+                                        <CalendarDays /> Book appointment
+                                    </Link>
+                                </Button>
+                            )}
                             {can.manageMedicalRecords && (
                                 <>
                                     <Button asChild>
@@ -133,6 +155,17 @@ export default function EmployeeShow(props: Props) {
                                     </Button>
                                 </>
                             )}
+                            {auth.can.viewAuditLog && (
+                                <Button variant="outline" asChild>
+                                    <Link
+                                        href={auditLogIndex({
+                                            query: { employee_id: employee.id },
+                                        })}
+                                    >
+                                        <History /> Access history
+                                    </Link>
+                                </Button>
+                            )}
                             {can.update && (
                                 <Button variant="outline" asChild>
                                     <Link href={edit(employee.id)}>
@@ -144,7 +177,7 @@ export default function EmployeeShow(props: Props) {
                     }
                 />
 
-                <dl className="grid gap-4 rounded-xl border border-sidebar-border/70 p-4 sm:grid-cols-2 md:grid-cols-4 dark:border-sidebar-border">
+                <dl className="grid gap-4 rounded-xl border border-border bg-card p-4 sm:grid-cols-2 md:grid-cols-4">
                     <Detail label="Department" value={employee.department} />
                     <Detail label="Position" value={employee.position} />
                     <Detail
@@ -180,6 +213,32 @@ export default function EmployeeShow(props: Props) {
                                 : 'No annual or pre-employment exam on record'}
                         </span>
                     </div>
+                )}
+
+                {props.upcomingAppointments.length > 0 && (
+                    <section className="space-y-2">
+                        <h2 className="text-base font-medium">
+                            Upcoming clinic appointments
+                        </h2>
+                        <ul className="divide-y rounded-xl border border-border bg-card">
+                            {props.upcomingAppointments.map((appointment) => (
+                                <li
+                                    key={appointment.id}
+                                    className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm"
+                                >
+                                    <span className="font-medium">
+                                        {formatDateTime(appointment.starts_at)}
+                                    </span>
+                                    <span className="text-muted-foreground">
+                                        {optionLabel(
+                                            props.appointmentPurposes,
+                                            appointment.purpose,
+                                        )}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
                 )}
 
                 {props.canViewMedicalRecords ? (
@@ -244,7 +303,7 @@ function MedicalHistory({
                 <h2 className="text-base font-medium">
                     Health check history ({healthChecks.length})
                 </h2>
-                <div className="overflow-x-auto rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
+                <div className="overflow-x-auto rounded-xl border border-border bg-card">
                     <table className="w-full text-sm">
                         <thead className="border-b bg-muted/50 text-left text-muted-foreground">
                             <tr>
@@ -349,7 +408,7 @@ function ClearanceHistory({
 }) {
     return (
         <>
-            <p className="flex items-center gap-2 rounded-xl border border-sidebar-border/70 p-3 text-sm text-muted-foreground dark:border-sidebar-border">
+            <p className="flex items-center gap-2 rounded-xl border border-border bg-card p-3 text-sm text-muted-foreground">
                 <Lock className="size-4 shrink-0" />
                 Diagnoses, vitals, and lab results are confidential and visible
                 to medical staff only.
@@ -364,7 +423,7 @@ function ClearanceHistory({
                         No follow-ups scheduled.
                     </p>
                 ) : (
-                    <ul className="divide-y rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
+                    <ul className="divide-y rounded-xl border border-border bg-card">
                         {followUps.map((followUp) => (
                             <li
                                 key={followUp.id}
@@ -394,7 +453,7 @@ function ClearanceHistory({
                         No health checks recorded yet.
                     </p>
                 ) : (
-                    <ul className="divide-y rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
+                    <ul className="divide-y rounded-xl border border-border bg-card">
                         {healthChecks.map((healthCheck) => (
                             <li
                                 key={healthCheck.id}
@@ -435,7 +494,7 @@ function FollowUpList({
     }
 
     return (
-        <ul className="divide-y rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
+        <ul className="divide-y rounded-xl border border-border bg-card">
             {followUps.map((followUp) => (
                 <li
                     key={followUp.id}

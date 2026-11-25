@@ -1,5 +1,5 @@
 import { Form, Head, Link, usePage } from '@inertiajs/react';
-import { Plus, Search } from 'lucide-react';
+import { FileUp, Plus, Search } from 'lucide-react';
 import { PageHeader } from '@/components/form-field';
 import {
     AnnualCheckBadge,
@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { formatDate, optionLabel } from '@/lib/medical';
 import { create, index, show } from '@/routes/employees';
+import { create as importCreate } from '@/routes/employees/import';
 import type {
     Company,
     EmployeeListRow,
@@ -54,11 +55,18 @@ export default function EmployeeIndex({
                             : 'Health clearance and follow-up status for your company. Medical details are visible to medical staff only.'
                     }
                     actions={
-                        <Button asChild>
-                            <Link href={create()}>
-                                <Plus /> Add employee
-                            </Link>
-                        </Button>
+                        <>
+                            <Button variant="outline" asChild>
+                                <Link href={importCreate()}>
+                                    <FileUp /> Import
+                                </Link>
+                            </Button>
+                            <Button asChild>
+                                <Link href={create()}>
+                                    <Plus /> Add employee
+                                </Link>
+                            </Button>
+                        </>
                     }
                 />
 
@@ -122,7 +130,7 @@ export default function EmployeeIndex({
                     </Button>
                 </Form>
 
-                <div className="overflow-x-auto rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
+                <div className="overflow-x-auto rounded-xl border border-border bg-card">
                     <table className="w-full text-sm">
                         <thead className="border-b bg-muted/50 text-left text-muted-foreground">
                             <tr>

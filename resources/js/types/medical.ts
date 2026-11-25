@@ -18,6 +18,12 @@ export type EmployeeOption = {
     first_name: string;
     last_name: string;
     full_name: string;
+    company_id?: number | null;
+    company?: { id: number; name: string } | null;
+    department?: string | null;
+    position?: string | null;
+    birth_date?: string | null;
+    sex?: string | null;
 };
 
 export type Company = {
@@ -160,4 +166,37 @@ export type AnnualCheckSummary = {
     status: AnnualCheckStatus;
     last_checked_on: string | null;
     due_on: string | null;
+};
+
+export type ClinicSlot = {
+    starts_at: string;
+    time: string;
+    booked: number;
+    available: boolean;
+};
+
+export type ScheduleEntry = {
+    id: number;
+    status: string;
+    purpose: string | null;
+    employee: {
+        id: number;
+        full_name: string;
+        employee_number: string;
+        company: string | null;
+    } | null;
+    notes: string | null;
+    booked_by: string | null;
+    can: { cancel: boolean; recordOutcome: boolean };
+};
+
+export type ScheduleSlot = ClinicSlot & { appointments: ScheduleEntry[] };
+
+export type OwnAppointment = {
+    id: number;
+    starts_at: string;
+    notes: string | null;
+    purpose: string;
+    status: string;
+    can: { cancel: boolean };
 };

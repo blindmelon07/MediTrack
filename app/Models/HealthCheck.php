@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Concerns\Auditable;
 use App\Enums\HealthCheckResult;
 use App\Enums\HealthCheckType;
 use Database\Factories\HealthCheckFactory;
@@ -50,7 +51,7 @@ use Illuminate\Support\Carbon;
 class HealthCheck extends Model
 {
     /** @use HasFactory<HealthCheckFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     /**
      * Delete stored attachment files along with the health check.
@@ -78,6 +79,14 @@ class HealthCheck extends Model
             'weight_kg' => 'decimal:1',
             'height_cm' => 'decimal:1',
         ];
+    }
+
+    /**
+     * Describe the health check for the audit log, without results or diagnosis.
+     */
+    public function auditLabel(): string
+    {
+        return strtolower($this->type->label())." health check #{$this->id} dated {$this->checked_on->toDateString()}";
     }
 
     /**

@@ -56,7 +56,7 @@ export default function UserIndex({
                     </Button>
                 </Form>
 
-                <div className="overflow-x-auto rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
+                <div className="overflow-x-auto rounded-xl border border-border bg-card">
                     <table className="w-full text-sm">
                         <thead className="border-b bg-muted/50 text-left text-muted-foreground">
                             <tr>

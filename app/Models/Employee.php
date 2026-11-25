@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Concerns\Auditable;
 use App\Enums\HealthCheckType;
 use App\Enums\Role;
 use App\Rules\PhilippineMobileNumber;
@@ -60,7 +61,7 @@ use Illuminate\Support\Carbon;
 class Employee extends Model
 {
     /** @use HasFactory<EmployeeFactory> */
-    use HasFactory, Notifiable;
+    use Auditable, HasFactory, Notifiable;
 
     /**
      * Get the attributes that should be cast.
@@ -88,6 +89,22 @@ class Employee extends Model
                 ? null
                 : (PhilippineMobileNumber::normalize($value) ?? trim($value)),
         );
+    }
+
+    /**
+     * Describe the employee for the audit log.
+     */
+    public function auditLabel(): string
+    {
+        return "employee {$this->full_name} ({$this->employee_number})";
+    }
+
+    /**
+     * The employee's own record is the one an audit entry is about.
+     */
+    public function auditEmployeeId(): ?int
+    {
+        return $this->id;
     }
 
     /**
@@ -281,9 +298,11 @@ class Employee extends Model
     {
         return self::query()
             ->where(fn (Builder $query) => $query->where('is_active', true)->orWhere('id', $selectedId))
+            ->with('company:id,name')
             ->orderBy('last_name')
             ->orderBy('first_name')
-            ->get(['id', 'employee_number', 'first_name', 'last_name']);
+            // The extra details fill in the printed examination record and certificate.
+            ->get(['id', 'employee_number', 'first_name', 'last_name', 'company_id', 'department', 'position', 'birth_date', 'sex']);
     }
 
     /**
@@ -324,6 +343,16 @@ class Employee extends Model
     public function latestHealthCheck(): HasOne
     {
         return $this->hasOne(HealthCheck::class)->latestOfMany('checked_on');
+    }
+
+    /**
+     * Get the employee's clinic appointments.
+     *
+     * @return HasMany<Appointment, $this>
+     */
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class);
     }
 
     /**

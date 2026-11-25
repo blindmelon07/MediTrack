@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Concerns\Auditable;
 use App\Enums\Role;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -37,7 +38,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+    use Auditable, HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 
     /**
      * The model's default values for attributes.
@@ -61,6 +62,22 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'role' => Role::class,
             'two_factor_confirmed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Describe the account for the audit log.
+     */
+    public function auditLabel(): string
+    {
+        return "account {$this->email} ({$this->role->label()})";
+    }
+
+    /**
+     * Accounts are not part of an employee's medical record.
+     */
+    public function auditEmployeeId(): ?int
+    {
+        return null;
     }
 
     /**

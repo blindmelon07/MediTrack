@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AppointmentPurpose;
+use App\Enums\AppointmentStatus;
 use App\Enums\FollowUpStatus;
 use App\Enums\HealthCheckResult;
 use App\Enums\HealthCheckType;
+use App\Models\Appointment;
 use App\Models\Company;
 use App\Models\Employee;
 use App\Models\FollowUp;
@@ -34,6 +37,8 @@ class DashboardController extends Controller
         $shared = [
             'healthCheckTypes' => HealthCheckType::options(),
             'healthCheckResults' => HealthCheckResult::options(),
+            'appointmentPurposes' => AppointmentPurpose::options(),
+            'appointmentStatuses' => AppointmentStatus::options(),
             'settings' => [
                 'annualIntervalMonths' => (int) config('meditrack.annual_check.interval_months'),
                 'annualReminderDays' => (int) config('meditrack.annual_check.reminder_days'),
@@ -67,6 +72,19 @@ class DashboardController extends Controller
             'overdueFollowUps' => $this->followUpList($user, overdue: true, withMedicalDetails: true),
             'upcomingFollowUps' => $this->followUpList($user, overdue: false, withMedicalDetails: true),
             'annualChecksDue' => $this->annualChecksDue($user),
+            'todayAppointments' => Appointment::query()
+                ->where('status', '!=', AppointmentStatus::Cancelled)
+                ->whereDate('starts_at', today())
+                ->with('employee:id,employee_number,first_name,last_name')
+                ->orderBy('starts_at')
+                ->get()
+                ->map(fn (Appointment $appointment): array => [
+                    'id' => $appointment->id,
+                    'time' => $appointment->starts_at->format('g:i A'),
+                    'purpose' => $appointment->purpose->value,
+                    'status' => $appointment->status->value,
+                    'employee' => $appointment->employee->only(['id', 'full_name', 'employee_number']),
+                ]),
             'awaitingResults' => HealthCheck::query()
                 ->where('result', HealthCheckResult::Pending)
                 ->with('employee:id,employee_number,first_name,last_name')
@@ -117,6 +135,12 @@ class DashboardController extends Controller
             'employee' => $employee->only(['id', 'full_name', 'employee_number']),
             'annualCheck' => $employee->annualCheckSummary(),
             'latestCheck' => $employee->healthChecks()->latest('checked_on')->first(['id', 'type', 'checked_on', 'result']),
+            'nextAppointment' => $employee->appointments()
+                ->scheduled()
+                ->where('starts_at', '>=', now())
+                ->orderBy('starts_at')
+                ->first()
+                ?->starts_at->format('Y-m-d H:i'),
             'openFollowUps' => $employee->followUps()
                 ->where('status', FollowUpStatus::Pending)
                 ->orderBy('due_on')

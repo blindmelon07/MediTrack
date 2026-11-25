@@ -6,10 +6,12 @@ use App\Console\Commands\Concerns\SendsLoggedReminders;
 use App\Enums\FollowUpStatus;
 use App\Enums\ReminderType;
 use App\Enums\Role;
+use App\Models\Appointment;
 use App\Models\Employee;
 use App\Models\FollowUp;
 use App\Models\User;
 use App\Notifications\AnnualCheckReminder;
+use App\Notifications\AppointmentNotice;
 use App\Notifications\FollowUpReminder;
 use App\Notifications\StaffDailyDigest;
 use Illuminate\Console\Attributes\Description;
@@ -18,7 +20,7 @@ use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Builder;
 
 #[Signature('app:send-reminders {--dry-run : List what would be sent without sending anything}')]
-#[Description('Text and email employees about upcoming and overdue follow-ups and annual checks, and email medical staff their daily list')]
+#[Description('Text and email employees about follow-ups, annual checks, and appointments due tomorrow, and email medical staff their daily list')]
 class SendReminders extends Command
 {
     use SendsLoggedReminders;
@@ -33,6 +35,9 @@ class SendReminders extends Command
 
         $this->components->info('Annual check reminders');
         $this->remindAnnualChecks();
+
+        $this->components->info('Appointment reminders');
+        $this->remindAppointments();
 
         $this->components->info('Medical staff daily list');
         $this->sendStaffDigests();
@@ -93,6 +98,34 @@ class SendReminders extends Command
                     $type,
                     $employee,
                     "{$employee->full_name}: annual check due {$dueOn->toDateString()}",
+                );
+            });
+    }
+
+    /**
+     * Remind employees of clinic appointments scheduled for tomorrow.
+     */
+    private function remindAppointments(): void
+    {
+        Appointment::query()
+            ->scheduled()
+            ->whereDate('starts_at', today()->addDay())
+            ->whereHas('employee', fn (Builder $query) => $query->where('is_active', true))
+            ->with('employee')
+            ->lazyById()
+            ->each(function (Appointment $appointment): void {
+                $employee = $appointment->employee;
+
+                if ($employee === null) {
+                    return;
+                }
+
+                $this->sendReminder(
+                    $employee,
+                    new AppointmentNotice($appointment, AppointmentNotice::TOMORROW),
+                    ReminderType::AppointmentTomorrow,
+                    $appointment,
+                    "{$employee->full_name}: appointment {$appointment->starts_at->format('Y-m-d H:i')}",
                 );
             });
     }

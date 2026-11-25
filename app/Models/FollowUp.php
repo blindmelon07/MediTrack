@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Concerns\Auditable;
 use App\Enums\FollowUpStatus;
 use Database\Factories\FollowUpFactory;
 use Illuminate\Database\Eloquent\Attributes\Appends;
@@ -42,7 +43,7 @@ use Illuminate\Support\Carbon;
 class FollowUp extends Model
 {
     /** @use HasFactory<FollowUpFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     /**
      * The model's default values for attributes.
@@ -116,6 +117,14 @@ class FollowUp extends Model
         }
 
         $query->whereHas('employee', fn (Builder $query) => $query->visibleTo($user));
+    }
+
+    /**
+     * Describe the follow-up for the audit log, without the medical reason.
+     */
+    public function auditLabel(): string
+    {
+        return "follow-up #{$this->id} due {$this->due_on->toDateString()}";
     }
 
     /**

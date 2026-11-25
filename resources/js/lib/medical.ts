@@ -53,3 +53,42 @@ export function formatFileSize(bytes: number): string {
 
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
+
+/**
+ * Format a "YYYY-MM-DD HH:mm" clinic time (already in clinic time) for display.
+ */
+export function formatDateTime(value: string | null | undefined): string {
+    if (!value) {
+        return '—';
+    }
+
+    const [datePart, timePart = '00:00'] = value.split(' ');
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hours, minutes] = timePart.split(':').map(Number);
+
+    return new Date(year, month - 1, day, hours, minutes).toLocaleString(
+        undefined,
+        {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+        },
+    );
+}
+
+/**
+ * Shift a "YYYY-MM-DD" date by whole days.
+ */
+export function addDays(value: string, days: number): string {
+    const [year, month, day] = value.split('-').map(Number);
+    const date = new Date(year, month - 1, day + days);
+
+    return [
+        date.getFullYear(),
+        String(date.getMonth() + 1).padStart(2, '0'),
+        String(date.getDate()).padStart(2, '0'),
+    ].join('-');
+}

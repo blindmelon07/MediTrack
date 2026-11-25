@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AppointmentPurpose;
+use App\Enums\AuditAction;
 use App\Enums\FollowUpStatus;
 use App\Enums\HealthCheckResult;
 use App\Enums\HealthCheckType;
 use App\Http\Requests\StoreEmployeeRequest;
 use App\Http\Requests\UpdateEmployeeRequest;
+use App\Models\Appointment;
+use App\Models\AuditLog;
 use App\Models\Company;
 use App\Models\Employee;
 use App\Models\FollowUp;
@@ -93,7 +97,7 @@ class EmployeeController extends Controller
      * Show the employee's profile. Medical staff and the employee themselves see the full
      * health history; HR sees only clearance and follow-up due dates.
      */
-    public function show(Request $request, Employee $employee): Response
+    public function show(Employee $employee): Response
     {
         Gate::authorize('view', $employee);
 
@@ -103,6 +107,12 @@ class EmployeeController extends Controller
         );
 
         $canViewMedicalRecords = Gate::allows('viewMedicalRecords', $employee);
+
+        AuditLog::record(
+            AuditAction::Viewed,
+            $employee,
+            ($canViewMedicalRecords ? 'Viewed medical record of ' : 'Viewed clearance summary of ').$employee->auditLabel(),
+        );
 
         $healthChecks = $employee->healthChecks()
             ->withCount('attachments')
@@ -121,7 +131,20 @@ class EmployeeController extends Controller
             'can' => [
                 'update' => Gate::allows('update', $employee),
                 'manageMedicalRecords' => Gate::allows('manageMedicalRecords', $employee),
+                'bookAppointment' => Gate::allows('create', [Appointment::class, $employee]),
             ],
+            'upcomingAppointments' => $employee->appointments()
+                ->scheduled()
+                ->where('starts_at', '>=', now())
+                ->orderBy('starts_at')
+                ->limit(5)
+                ->get()
+                ->map(fn (Appointment $appointment): array => [
+                    'id' => $appointment->id,
+                    'starts_at' => $appointment->starts_at->format('Y-m-d H:i'),
+                    'purpose' => $appointment->purpose->value,
+                ]),
+            'appointmentPurposes' => AppointmentPurpose::options(),
             'healthChecks' => $canViewMedicalRecords ? $healthChecks : $this->clearanceSummaries($healthChecks),
             'followUps' => $canViewMedicalRecords ? $followUps : $this->followUpSchedule($followUps),
             'healthCheckTypes' => HealthCheckType::options(),

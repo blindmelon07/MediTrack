@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Appointment;
+use App\Models\AuditLog;
 use App\Models\Employee;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -40,8 +42,16 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            'branding' => [
+                'tagline' => config('meditrack.branding.tagline'),
+                'office' => config('meditrack.branding.office'),
+                'officeAddress' => config('meditrack.branding.office_address'),
+                'logo' => config('meditrack.branding.logo'),
+                'mark' => config('meditrack.branding.mark'),
+            ],
             'auth' => [
                 'user' => $request->user(),
+                'roleLabel' => $request->user()?->role->label(),
                 'can' => fn (): array => $this->permissions($request->user()),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
@@ -51,18 +61,20 @@ class HandleInertiaRequests extends Middleware
     /**
      * Get what the signed-in user may open, so the interface only shows reachable pages.
      *
-     * @return array{viewEmployees: bool, manageHealthRecords: bool, manageUsers: bool, ownEmployeeId: int|null}
+     * @return array{viewEmployees: bool, viewAppointments: bool, manageHealthRecords: bool, manageUsers: bool, viewAuditLog: bool, ownEmployeeId: int|null}
      */
     private function permissions(?User $user): array
     {
         if ($user === null) {
-            return ['viewEmployees' => false, 'manageHealthRecords' => false, 'manageUsers' => false, 'ownEmployeeId' => null];
+            return ['viewEmployees' => false, 'manageHealthRecords' => false, 'manageUsers' => false, 'viewAuditLog' => false, 'viewAppointments' => false, 'ownEmployeeId' => null];
         }
 
         return [
             'viewEmployees' => $user->can('viewAny', Employee::class),
+            'viewAppointments' => $user->can('viewAny', Appointment::class),
             'manageHealthRecords' => $user->managesHealthRecords(),
             'manageUsers' => $user->can('viewAny', User::class),
+            'viewAuditLog' => $user->can('viewAny', AuditLog::class),
             'ownEmployeeId' => $user->employee()->value('id'),
         ];
     }

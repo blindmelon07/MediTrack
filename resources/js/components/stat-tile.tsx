@@ -53,7 +53,7 @@ export default function StatTile({
         </>
     );
     const className = cn(
-        'flex flex-col gap-1 rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border',
+        'flex flex-col gap-1 rounded-xl border border-border bg-card p-4',
         toneStyles[activeTone].ring,
     );
 

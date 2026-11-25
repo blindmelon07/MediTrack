@@ -1,9 +1,14 @@
-import FormField, { FormSection } from '@/components/form-field';
+import { Briefcase, Phone, UserRound } from 'lucide-react';
+import FormField from '@/components/form-field';
+import type { FormStep } from '@/components/form-steps';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import type { Company, Employee } from '@/types';
 
-export default function EmployeeFormFields({
+/**
+ * The Details, Work, and Contact tabs shared by the add and edit employee forms.
+ */
+export function employeeSteps({
     employee,
     companies,
     errors,
@@ -11,12 +16,23 @@ export default function EmployeeFormFields({
     employee?: Employee;
     companies: Company[];
     errors: Record<string, string | undefined>;
-}) {
+}): FormStep[] {
     const companyLocked = companies.length === 1;
 
-    return (
-        <>
-            <FormSection title="Employee details">
+    return [
+        {
+            id: 'details',
+            label: 'Employee details',
+            icon: UserRound,
+            fields: [
+                'company_id',
+                'employee_number',
+                'first_name',
+                'last_name',
+                'birth_date',
+                'sex',
+            ],
+            content: (
                 <div className="grid gap-4 md:grid-cols-3">
                     <FormField
                         id="company_id"
@@ -32,7 +48,6 @@ export default function EmployeeFormFields({
                         <NativeSelect
                             id="company_id"
                             name="company_id"
-                            required
                             disabled={companyLocked}
                             defaultValue={
                                 employee?.company_id ??
@@ -59,10 +74,10 @@ export default function EmployeeFormFields({
                             id="employee_number"
                             name="employee_number"
                             defaultValue={employee?.employee_number}
-                            required
                             autoFocus={!employee}
                         />
                     </FormField>
+                    <div className="hidden md:block" />
                     <FormField
                         id="first_name"
                         label="First name"
@@ -73,7 +88,6 @@ export default function EmployeeFormFields({
                             id="first_name"
                             name="first_name"
                             defaultValue={employee?.first_name}
-                            required
                         />
                     </FormField>
                     <FormField
@@ -86,9 +100,9 @@ export default function EmployeeFormFields({
                             id="last_name"
                             name="last_name"
                             defaultValue={employee?.last_name}
-                            required
                         />
                     </FormField>
+                    <div className="hidden md:block" />
                     <FormField
                         id="birth_date"
                         label="Date of birth"
@@ -113,10 +127,15 @@ export default function EmployeeFormFields({
                         </NativeSelect>
                     </FormField>
                 </div>
-            </FormSection>
-
-            <FormSection title="Work">
-                <div className="grid gap-4 md:grid-cols-3">
+            ),
+        },
+        {
+            id: 'work',
+            label: 'Work',
+            icon: Briefcase,
+            fields: ['department', 'position', 'hired_on', 'is_active'],
+            content: (
+                <div className="grid gap-4 md:grid-cols-2">
                     <FormField
                         id="department"
                         label="Department"
@@ -169,38 +188,51 @@ export default function EmployeeFormFields({
                         </NativeSelect>
                     </FormField>
                 </div>
-            </FormSection>
-
-            <FormSection
-                title="Contact"
-                description="Reminders for follow-ups and annual checks go to these. Messages never include medical details."
-            >
-                <div className="grid gap-4 md:grid-cols-3">
-                    <FormField id="email" label="Email" error={errors.email}>
-                        <Input
+            ),
+        },
+        {
+            id: 'contact',
+            label: 'Contact',
+            icon: Phone,
+            fields: ['email', 'phone'],
+            content: (
+                <>
+                    <p className="text-sm text-muted-foreground">
+                        Reminders for follow-ups, annual checks, and
+                        appointments go to these. Messages never include medical
+                        details.
+                    </p>
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <FormField
                             id="email"
-                            name="email"
-                            type="email"
-                            defaultValue={employee?.email ?? ''}
-                        />
-                    </FormField>
-                    <FormField
-                        id="phone"
-                        label="Mobile number"
-                        error={errors.phone}
-                        hint="Used for SMS reminders, e.g. 0917 123 4567."
-                    >
-                        <Input
+                            label="Email"
+                            error={errors.email}
+                        >
+                            <Input
+                                id="email"
+                                name="email"
+                                type="email"
+                                defaultValue={employee?.email ?? ''}
+                            />
+                        </FormField>
+                        <FormField
                             id="phone"
-                            name="phone"
-                            type="tel"
-                            inputMode="tel"
-                            placeholder="0917 123 4567"
-                            defaultValue={employee?.phone ?? ''}
-                        />
-                    </FormField>
-                </div>
-            </FormSection>
-        </>
-    );
+                            label="Mobile number"
+                            error={errors.phone}
+                            hint="Used for SMS reminders, e.g. 0917 123 4567."
+                        >
+                            <Input
+                                id="phone"
+                                name="phone"
+                                type="tel"
+                                inputMode="tel"
+                                placeholder="0917 123 4567"
+                                defaultValue={employee?.phone ?? ''}
+                            />
+                        </FormField>
+                    </div>
+                </>
+            ),
+        },
+    ];
 }

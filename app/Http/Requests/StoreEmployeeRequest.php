@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Concerns\AssignsHrCompany;
 use App\Concerns\EmployeeValidationRules;
 use App\Models\Employee;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -9,7 +10,7 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreEmployeeRequest extends FormRequest
 {
-    use EmployeeValidationRules;
+    use AssignsHrCompany, EmployeeValidationRules;
 
     /**
      * Determine if the user is authorized to make this request.
