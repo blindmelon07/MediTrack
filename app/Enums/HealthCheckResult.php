@@ -27,6 +27,22 @@ enum HealthCheckResult: string
     }
 
     /**
+     * Get the work-clearance status HR may see in place of the medical result.
+     *
+     * @return array{value: string, label: string}
+     */
+    public function clearance(): array
+    {
+        return match ($this) {
+            self::Normal, self::Fit => ['value' => 'cleared', 'label' => 'Cleared'],
+            self::FitWithRestrictions => ['value' => 'restricted', 'label' => 'Cleared with restrictions'],
+            self::Unfit => ['value' => 'not_cleared', 'label' => 'Not cleared'],
+            self::Abnormal => ['value' => 'needs_follow_up', 'label' => 'Needs follow-up'],
+            self::Pending => ['value' => 'pending', 'label' => 'Awaiting results'],
+        };
+    }
+
+    /**
      * Determine whether the result calls for a follow-up.
      */
     public function needsFollowUp(): bool

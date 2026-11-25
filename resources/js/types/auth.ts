@@ -3,6 +3,8 @@ export type User = {
     name: string;
     email: string;
     avatar?: string;
+    role: Role;
+    company_id: number | null;
     email_verified_at: string | null;
     two_factor_enabled?: boolean;
     created_at: string;
@@ -10,8 +12,18 @@ export type User = {
     [key: string]: unknown;
 };
 
+export type Role = 'admin' | 'medical_staff' | 'hr' | 'employee';
+
+export type Permissions = {
+    viewEmployees: boolean;
+    manageHealthRecords: boolean;
+    manageUsers: boolean;
+    ownEmployeeId: number | null;
+};
+
 export type Auth = {
     user: User;
+    can: Permissions;
 };
 
 export type Passkey = {

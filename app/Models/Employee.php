@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Role;
 use Database\Factories\EmployeeFactory;
 use Illuminate\Database\Eloquent\Attributes\Appends;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -19,6 +20,7 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property int|null $user_id
+ * @property int|null $company_id
  * @property string $employee_number
  * @property string $first_name
  * @property string $last_name
@@ -31,10 +33,13 @@ use Illuminate\Support\Carbon;
  * @property string|null $sex
  * @property Carbon|null $hired_on
  * @property bool $is_active
+ * @property-read int|null $pending_follow_ups_count
+ * @property-read int|null $overdue_follow_ups_count
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
 #[Fillable([
+    'company_id',
     'employee_number',
     'first_name',
     'last_name',
@@ -109,6 +114,28 @@ class Employee extends Model
     }
 
     /**
+     * Limit the query to employees the user is allowed to see: everyone for medical staff,
+     * their own company for HR, and only themselves for employees.
+     *
+     * @param  Builder<Employee>  $query
+     */
+    #[Scope]
+    protected function visibleTo(Builder $query, User $user): void
+    {
+        if ($user->managesHealthRecords()) {
+            return;
+        }
+
+        if ($user->hasRole(Role::Hr) && $user->company_id !== null) {
+            $query->where('company_id', $user->company_id);
+
+            return;
+        }
+
+        $query->where('user_id', $user->id);
+    }
+
+    /**
      * Get the employees that can be picked in a form, keeping an already selected (possibly inactive) employee.
      *
      * @return Collection<int, Employee>
@@ -120,6 +147,16 @@ class Employee extends Model
             ->orderBy('last_name')
             ->orderBy('first_name')
             ->get(['id', 'employee_number', 'first_name', 'last_name']);
+    }
+
+    /**
+     * Get the company (GSAC Main, GGHI, or Tripple2) the employee works for.
+     *
+     * @return BelongsTo<Company, $this>
+     */
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 
     /**

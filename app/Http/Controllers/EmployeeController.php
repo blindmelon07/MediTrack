@@ -7,36 +7,55 @@ use App\Enums\HealthCheckResult;
 use App\Enums\HealthCheckType;
 use App\Http\Requests\StoreEmployeeRequest;
 use App\Http\Requests\UpdateEmployeeRequest;
+use App\Models\Company;
 use App\Models\Employee;
+use App\Models\FollowUp;
+use App\Models\HealthCheck;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class EmployeeController extends Controller
 {
     /**
-     * List employees, filtered by search term and employment status.
+     * List the employees the user may see, filtered by search term, company, and employment status.
      */
     public function index(Request $request): Response
     {
+        Gate::authorize('viewAny', Employee::class);
+
+        /** @var User $user */
+        $user = $request->user();
+        $showMedicalResults = $user->managesHealthRecords();
         $search = $request->string('search')->trim()->toString();
         $status = $request->string('status', 'active')->toString();
+        $companyId = $showMedicalResults ? ($request->integer('company_id') ?: null) : null;
 
         $employees = Employee::query()
+            ->visibleTo($user)
             ->search($search)
             ->when($status === 'active', fn ($query) => $query->active())
             ->when($status === 'inactive', fn ($query) => $query->where('is_active', false))
-            ->with('latestHealthCheck')
-            ->withCount(['followUps as pending_follow_ups_count' => fn ($query) => $query->where('status', FollowUpStatus::Pending)])
+            ->when($companyId, fn ($query, int $companyId) => $query->where('company_id', $companyId))
+            ->with(['company:id,name', 'latestHealthCheck'])
+            ->withCount([
+                'followUps as pending_follow_ups_count' => fn ($query) => $query->where('status', FollowUpStatus::Pending),
+                'followUps as overdue_follow_ups_count' => fn ($query) => $query->overdue(),
+            ])
             ->orderBy('last_name')
             ->orderBy('first_name')
             ->paginate(15)
-            ->withQueryString();
+            ->withQueryString()
+            ->through(fn (Employee $employee): array => $this->listRow($employee, $showMedicalResults));
 
         return Inertia::render('employees/index', [
             'employees' => $employees,
-            'filters' => ['search' => $search, 'status' => $status],
+            'filters' => ['search' => $search, 'status' => $status, 'company_id' => $companyId],
+            'companies' => $showMedicalResults ? Company::query()->orderBy('name')->get(['id', 'name']) : [],
             'healthCheckTypes' => HealthCheckType::options(),
             'healthCheckResults' => HealthCheckResult::options(),
         ]);
@@ -45,9 +64,13 @@ class EmployeeController extends Controller
     /**
      * Show the form for adding an employee.
      */
-    public function create(): Response
+    public function create(Request $request): Response
     {
-        return Inertia::render('employees/create');
+        Gate::authorize('create', Employee::class);
+
+        return Inertia::render('employees/create', [
+            'companies' => $this->companyOptions($request->user()),
+        ]);
     }
 
     /**
@@ -63,20 +86,34 @@ class EmployeeController extends Controller
     }
 
     /**
-     * Show the employee's profile with their full health history.
+     * Show the employee's profile. Medical staff and the employee themselves see the full
+     * health history; HR sees only clearance and follow-up due dates.
      */
-    public function show(Employee $employee): Response
+    public function show(Request $request, Employee $employee): Response
     {
+        Gate::authorize('view', $employee);
+
+        $canViewMedicalRecords = Gate::allows('viewMedicalRecords', $employee);
+
+        $healthChecks = $employee->healthChecks()
+            ->withCount('attachments')
+            ->orderByDesc('checked_on')
+            ->get();
+
+        $followUps = $employee->followUps()
+            ->with('assignee:id,name')
+            ->orderByDesc('due_on')
+            ->get();
+
         return Inertia::render('employees/show', [
-            'employee' => $employee,
-            'healthChecks' => $employee->healthChecks()
-                ->withCount('attachments')
-                ->orderByDesc('checked_on')
-                ->get(),
-            'followUps' => $employee->followUps()
-                ->with('assignee:id,name')
-                ->orderByDesc('due_on')
-                ->get(),
+            'employee' => $employee->load('company:id,name'),
+            'canViewMedicalRecords' => $canViewMedicalRecords,
+            'can' => [
+                'update' => Gate::allows('update', $employee),
+                'manageMedicalRecords' => Gate::allows('manageMedicalRecords', $employee),
+            ],
+            'healthChecks' => $canViewMedicalRecords ? $healthChecks : $this->clearanceSummaries($healthChecks),
+            'followUps' => $canViewMedicalRecords ? $followUps : $this->followUpSchedule($followUps),
             'healthCheckTypes' => HealthCheckType::options(),
             'healthCheckResults' => HealthCheckResult::options(),
             'followUpStatuses' => FollowUpStatus::options(),
@@ -86,10 +123,13 @@ class EmployeeController extends Controller
     /**
      * Show the form for editing an employee.
      */
-    public function edit(Employee $employee): Response
+    public function edit(Request $request, Employee $employee): Response
     {
+        Gate::authorize('update', $employee);
+
         return Inertia::render('employees/edit', [
             'employee' => $employee,
+            'companies' => $this->companyOptions($request->user()),
         ]);
     }
 
@@ -103,5 +143,74 @@ class EmployeeController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Employee updated.')]);
 
         return to_route('employees.show', $employee);
+    }
+
+    /**
+     * Shape an employee for the list. The medical result is only included for medical staff.
+     *
+     * @return array<string, mixed>
+     */
+    private function listRow(Employee $employee, bool $showMedicalResult): array
+    {
+        $latestCheck = $employee->latestHealthCheck;
+
+        return [
+            ...$employee->only(['id', 'employee_number', 'full_name', 'department', 'position', 'is_active']),
+            'company' => $employee->company?->name,
+            'pending_follow_ups_count' => $employee->pending_follow_ups_count,
+            'overdue_follow_ups_count' => $employee->overdue_follow_ups_count,
+            'latest_check' => $latestCheck === null ? null : [
+                'checked_on' => $latestCheck->checked_on->toDateString(),
+                'type' => $latestCheck->type->value,
+                'clearance' => $latestCheck->result->clearance(),
+                'result' => $showMedicalResult ? $latestCheck->result->value : null,
+            ],
+        ];
+    }
+
+    /**
+     * Reduce health checks to what HR may see: when, what kind, and whether the employee is cleared.
+     *
+     * @param  Collection<int, HealthCheck>  $healthChecks
+     * @return array<int, array<string, mixed>>
+     */
+    private function clearanceSummaries(Collection $healthChecks): array
+    {
+        return $healthChecks->map(fn (HealthCheck $healthCheck): array => [
+            'id' => $healthCheck->id,
+            'checked_on' => $healthCheck->checked_on->toDateString(),
+            'type' => $healthCheck->type->value,
+            'clearance' => $healthCheck->result->clearance(),
+        ])->all();
+    }
+
+    /**
+     * Reduce follow-ups to what HR may see: when they are due and whether they happened, without the medical reason.
+     *
+     * @param  Collection<int, FollowUp>  $followUps
+     * @return array<int, array<string, mixed>>
+     */
+    private function followUpSchedule(Collection $followUps): array
+    {
+        return $followUps->map(fn (FollowUp $followUp): array => [
+            'id' => $followUp->id,
+            'due_on' => $followUp->due_on->toDateString(),
+            'status' => $followUp->status->value,
+            'completed_on' => $followUp->completed_on?->toDateString(),
+            'is_overdue' => $followUp->is_overdue,
+        ])->all();
+    }
+
+    /**
+     * Get the companies the user may file employees under. HR is limited to their own.
+     *
+     * @return Collection<int, Company>
+     */
+    private function companyOptions(User $user): Collection
+    {
+        return Company::query()
+            ->when(! $user->managesHealthRecords(), fn ($query) => $query->whereKey($user->company_id))
+            ->orderBy('name')
+            ->get(['id', 'name']);
     }
 }

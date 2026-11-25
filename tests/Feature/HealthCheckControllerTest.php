@@ -39,12 +39,85 @@ test('guests are redirected to the login page', function () {
     $response->assertRedirect(route('login'));
 });
 
+describe('access', function () {
+    test('forbids HR from listing health checks', function () {
+        $response = $this->actingAs(User::factory()->hr()->create())->get(route('health-checks.index'));
+
+        $response->assertForbidden();
+    });
+
+    test('forbids HR from viewing a health check in their own company', function () {
+        $user = User::factory()->hr()->create();
+        $healthCheck = HealthCheck::factory()
+            ->for(Employee::factory()->state(['company_id' => $user->company_id]))
+            ->create();
+
+        $response = $this->actingAs($user)->get(route('health-checks.show', $healthCheck));
+
+        $response->assertForbidden();
+    });
+
+    test('forbids HR from recording a health check', function () {
+        $user = User::factory()->hr()->create();
+        $employee = Employee::factory()->create(['company_id' => $user->company_id]);
+
+        $response = $this->actingAs($user)->post(route('health-checks.store'), healthCheckPayload($employee));
+
+        $response->assertForbidden();
+        $this->assertDatabaseCount('health_checks', 0);
+    });
+
+    test('lets an employee view their own health check read-only', function () {
+        $user = User::factory()->create();
+        $healthCheck = HealthCheck::factory()->for(Employee::factory()->state(['user_id' => $user->id]))->create();
+
+        $response = $this->actingAs($user)->get(route('health-checks.show', $healthCheck));
+
+        $response->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('healthCheck.id', $healthCheck->id)
+            ->where('can.update', false));
+    });
+
+    test('forbids an employee from viewing a coworker\'s health check', function () {
+        $user = User::factory()->create();
+        Employee::factory()->create(['user_id' => $user->id]);
+        $coworkersCheck = HealthCheck::factory()->create();
+
+        $response = $this->actingAs($user)->get(route('health-checks.show', $coworkersCheck));
+
+        $response->assertForbidden();
+    });
+
+    test('forbids an employee from editing their own health check', function () {
+        $user = User::factory()->create();
+        $healthCheck = HealthCheck::factory()->for(Employee::factory()->state(['user_id' => $user->id]))->create();
+
+        $response = $this->actingAs($user)->put(
+            route('health-checks.update', $healthCheck),
+            healthCheckPayload($healthCheck->employee, ['result' => 'fit']),
+        );
+
+        $response->assertForbidden();
+        expect($healthCheck->fresh()->result)->toBe(HealthCheckResult::Normal);
+    });
+
+    test('forbids an employee from deleting their own health check', function () {
+        $user = User::factory()->create();
+        $healthCheck = HealthCheck::factory()->for(Employee::factory()->state(['user_id' => $user->id]))->create();
+
+        $response = $this->actingAs($user)->delete(route('health-checks.destroy', $healthCheck));
+
+        $response->assertForbidden();
+        $this->assertModelExists($healthCheck);
+    });
+});
+
 describe('index', function () {
     test('filters health checks by result', function () {
         $abnormal = HealthCheck::factory()->abnormal()->create();
         HealthCheck::factory()->create();
 
-        $response = $this->actingAs(User::factory()->create())
+        $response = $this->actingAs(User::factory()->medicalStaff()->create())
             ->get(route('health-checks.index', ['result' => 'abnormal']));
 
         $response->assertOk()->assertInertia(fn (Assert $page) => $page
@@ -57,7 +130,7 @@ describe('index', function () {
         $match = HealthCheck::factory()->for(Employee::factory()->state(['last_name' => 'Villanueva']))->create();
         HealthCheck::factory()->for(Employee::factory()->state(['last_name' => 'Cruz']))->create();
 
-        $response = $this->actingAs(User::factory()->create())
+        $response = $this->actingAs(User::factory()->medicalStaff()->create())
             ->get(route('health-checks.index', ['search' => 'Villanueva']));
 
         $response->assertInertia(fn (Assert $page) => $page
@@ -70,7 +143,7 @@ describe('create', function () {
     test('preselects the employee given in the query string', function () {
         $employee = Employee::factory()->create();
 
-        $response = $this->actingAs(User::factory()->create())
+        $response = $this->actingAs(User::factory()->medicalStaff()->create())
             ->get(route('health-checks.create', ['employee_id' => $employee->id]));
 
         $response->assertOk()->assertInertia(fn (Assert $page) => $page
@@ -82,7 +155,7 @@ describe('create', function () {
         $active = Employee::factory()->create();
         Employee::factory()->inactive()->create();
 
-        $response = $this->actingAs(User::factory()->create())->get(route('health-checks.create'));
+        $response = $this->actingAs(User::factory()->medicalStaff()->create())->get(route('health-checks.create'));
 
         $response->assertInertia(fn (Assert $page) => $page
             ->has('employees', 1)
@@ -92,7 +165,7 @@ describe('create', function () {
 
 describe('store', function () {
     test('records the health check against the signed-in user', function () {
-        $user = User::factory()->create();
+        $user = User::factory()->medicalStaff()->create();
         $employee = Employee::factory()->create();
 
         $response = $this->actingAs($user)->post(route('health-checks.store'), healthCheckPayload($employee));
@@ -108,10 +181,10 @@ describe('store', function () {
     });
 
     test('schedules a pending follow-up when requested', function () {
-        $nurse = User::factory()->create();
+        $nurse = User::factory()->medicalStaff()->create();
         $employee = Employee::factory()->create();
 
-        $response = $this->actingAs(User::factory()->create())->post(route('health-checks.store'), healthCheckPayload($employee, [
+        $response = $this->actingAs(User::factory()->medicalStaff()->create())->post(route('health-checks.store'), healthCheckPayload($employee, [
             'schedule_follow_up' => '1',
             'follow_up_reason' => 'Recheck blood pressure',
             'follow_up_due_on' => '2026-12-20',
@@ -131,7 +204,7 @@ describe('store', function () {
     test('requires a reason and due date when scheduling a follow-up', function () {
         $employee = Employee::factory()->create();
 
-        $response = $this->actingAs(User::factory()->create())->post(
+        $response = $this->actingAs(User::factory()->medicalStaff()->create())->post(
             route('health-checks.store'),
             healthCheckPayload($employee, ['schedule_follow_up' => '1']),
         );
@@ -146,7 +219,7 @@ describe('store', function () {
     test('rejects a follow-up due before the check date', function () {
         $employee = Employee::factory()->create();
 
-        $response = $this->actingAs(User::factory()->create())->post(route('health-checks.store'), healthCheckPayload($employee, [
+        $response = $this->actingAs(User::factory()->medicalStaff()->create())->post(route('health-checks.store'), healthCheckPayload($employee, [
             'schedule_follow_up' => '1',
             'follow_up_reason' => 'Recheck',
             'follow_up_due_on' => '2026-11-01',
@@ -158,7 +231,7 @@ describe('store', function () {
     test('ignores follow-up fields when no follow-up is requested', function () {
         $employee = Employee::factory()->create();
 
-        $response = $this->actingAs(User::factory()->create())->post(route('health-checks.store'), healthCheckPayload($employee, [
+        $response = $this->actingAs(User::factory()->medicalStaff()->create())->post(route('health-checks.store'), healthCheckPayload($employee, [
             'schedule_follow_up' => '0',
             'follow_up_due_on' => 'not-a-date',
         ]));
@@ -171,7 +244,7 @@ describe('store', function () {
     test('rejects a check dated in the future', function () {
         $employee = Employee::factory()->create();
 
-        $response = $this->actingAs(User::factory()->create())->post(
+        $response = $this->actingAs(User::factory()->medicalStaff()->create())->post(
             route('health-checks.store'),
             healthCheckPayload($employee, ['checked_on' => '2026-11-26']),
         );
@@ -182,7 +255,7 @@ describe('store', function () {
     test('rejects a malformed blood pressure reading', function () {
         $employee = Employee::factory()->create();
 
-        $response = $this->actingAs(User::factory()->create())->post(
+        $response = $this->actingAs(User::factory()->medicalStaff()->create())->post(
             route('health-checks.store'),
             healthCheckPayload($employee, ['blood_pressure' => '120-80']),
         );
@@ -193,7 +266,7 @@ describe('store', function () {
     });
 
     test('requires the employee, type, date, and result', function () {
-        $response = $this->actingAs(User::factory()->create())->post(route('health-checks.store'), []);
+        $response = $this->actingAs(User::factory()->medicalStaff()->create())->post(route('health-checks.store'), []);
 
         $response->assertSessionHasErrors(['employee_id', 'type', 'checked_on', 'result']);
     });
@@ -202,7 +275,7 @@ describe('store', function () {
         Storage::fake(HealthCheckAttachment::DISK);
         $employee = Employee::factory()->create();
 
-        $response = $this->actingAs(User::factory()->create())->post(route('health-checks.store'), healthCheckPayload($employee, [
+        $response = $this->actingAs(User::factory()->medicalStaff()->create())->post(route('health-checks.store'), healthCheckPayload($employee, [
             'attachments' => [UploadedFile::fake()->create('cbc-results.pdf', 200, 'application/pdf')],
         ]));
 
@@ -220,7 +293,7 @@ describe('show', function () {
         $healthCheck = HealthCheck::factory()->create();
         $followUp = FollowUp::factory()->for($healthCheck->employee)->for($healthCheck)->create();
 
-        $response = $this->actingAs(User::factory()->create())->get(route('health-checks.show', $healthCheck));
+        $response = $this->actingAs(User::factory()->medicalStaff()->create())->get(route('health-checks.show', $healthCheck));
 
         $response->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('health-checks/show')
@@ -235,7 +308,7 @@ describe('update', function () {
     test('updates the health check', function () {
         $healthCheck = HealthCheck::factory()->create();
 
-        $response = $this->actingAs(User::factory()->create())->put(
+        $response = $this->actingAs(User::factory()->medicalStaff()->create())->put(
             route('health-checks.update', $healthCheck),
             healthCheckPayload($healthCheck->employee, ['result' => 'fit_with_restrictions', 'diagnosis' => 'Lower back strain']),
         );
@@ -254,7 +327,7 @@ describe('destroy', function () {
         $attachment = $healthCheck->storeAttachment(UploadedFile::fake()->create('xray.pdf', 50, 'application/pdf'));
         $followUp = FollowUp::factory()->for($healthCheck->employee)->for($healthCheck)->create();
 
-        $response = $this->actingAs(User::factory()->create())->delete(route('health-checks.destroy', $healthCheck));
+        $response = $this->actingAs(User::factory()->medicalStaff()->create())->delete(route('health-checks.destroy', $healthCheck));
 
         $response->assertRedirect(route('employees.show', $healthCheck->employee_id));
         $this->assertModelMissing($healthCheck);

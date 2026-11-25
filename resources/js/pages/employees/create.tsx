@@ -3,8 +3,13 @@ import EmployeeFormFields from '@/components/employee-form-fields';
 import { PageHeader } from '@/components/form-field';
 import { Button } from '@/components/ui/button';
 import { create, index, store } from '@/routes/employees';
+import type { Company } from '@/types';
 
-export default function EmployeeCreate() {
+export default function EmployeeCreate({
+    companies,
+}: {
+    companies: Company[];
+}) {
     return (
         <>
             <Head title="Add employee" />
@@ -17,7 +22,10 @@ export default function EmployeeCreate() {
                 <Form {...store.form()} className="space-y-6">
                     {({ processing, errors }) => (
                         <>
-                            <EmployeeFormFields errors={errors} />
+                            <EmployeeFormFields
+                                companies={companies}
+                                errors={errors}
+                            />
                             <div className="flex gap-2">
                                 <Button disabled={processing}>
                                     Save employee

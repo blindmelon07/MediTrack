@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Employee;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -40,8 +42,28 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
+                'can' => fn (): array => $this->permissions($request->user()),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+        ];
+    }
+
+    /**
+     * Get what the signed-in user may open, so the interface only shows reachable pages.
+     *
+     * @return array{viewEmployees: bool, manageHealthRecords: bool, manageUsers: bool, ownEmployeeId: int|null}
+     */
+    private function permissions(?User $user): array
+    {
+        if ($user === null) {
+            return ['viewEmployees' => false, 'manageHealthRecords' => false, 'manageUsers' => false, 'ownEmployeeId' => null];
+        }
+
+        return [
+            'viewEmployees' => $user->can('viewAny', Employee::class),
+            'manageHealthRecords' => $user->managesHealthRecords(),
+            'manageUsers' => $user->can('viewAny', User::class),
+            'ownEmployeeId' => $user->employee()->value('id'),
         ];
     }
 }

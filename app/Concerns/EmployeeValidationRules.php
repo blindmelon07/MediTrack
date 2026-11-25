@@ -2,6 +2,8 @@
 
 namespace App\Concerns;
 
+use App\Enums\Role;
+use App\Models\Company;
 use App\Models\Employee;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
@@ -16,6 +18,7 @@ trait EmployeeValidationRules
     protected function employeeRules(?int $employeeId = null): array
     {
         return [
+            'company_id' => ['required', 'integer', Rule::exists(Company::class, 'id')],
             'employee_number' => [
                 'required',
                 'string',
@@ -34,6 +37,30 @@ trait EmployeeValidationRules
             'sex' => ['nullable', Rule::in(['male', 'female'])],
             'hired_on' => ['nullable', 'date'],
             'is_active' => ['boolean'],
+        ];
+    }
+
+    /**
+     * Pin HR users to their own company so they cannot file employees under another one.
+     */
+    protected function assignHrCompany(): void
+    {
+        $user = $this->user();
+
+        if ($user !== null && $user->hasRole(Role::Hr)) {
+            $this->merge(['company_id' => $user->company_id]);
+        }
+    }
+
+    /**
+     * Get the custom messages for employee validation.
+     *
+     * @return array<string, string>
+     */
+    protected function employeeMessages(): array
+    {
+        return [
+            'company_id.required' => 'Choose the company the employee works for.',
         ];
     }
 }

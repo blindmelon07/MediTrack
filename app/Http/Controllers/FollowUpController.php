@@ -11,6 +11,7 @@ use App\Models\HealthCheck;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -22,6 +23,8 @@ class FollowUpController extends Controller
      */
     public function index(Request $request): Response
     {
+        Gate::authorize('viewAny', FollowUp::class);
+
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:100'],
             'status' => ['nullable', Rule::in([...array_column(FollowUpStatus::cases(), 'value'), 'overdue', 'all'])],
@@ -55,6 +58,8 @@ class FollowUpController extends Controller
      */
     public function create(Request $request): Response
     {
+        Gate::authorize('create', FollowUp::class);
+
         $healthCheck = $request->filled('health_check_id')
             ? HealthCheck::query()->find($request->integer('health_check_id'), ['id', 'employee_id', 'type', 'checked_on', 'recommendations'])
             : null;
@@ -86,6 +91,8 @@ class FollowUpController extends Controller
      */
     public function edit(FollowUp $followUp): Response
     {
+        Gate::authorize('update', $followUp);
+
         $followUp->load([
             'employee:id,employee_number,first_name,last_name',
             'healthCheck:id,employee_id,type,checked_on',
@@ -122,6 +129,8 @@ class FollowUpController extends Controller
      */
     public function destroy(FollowUp $followUp): RedirectResponse
     {
+        Gate::authorize('delete', $followUp);
+
         $employeeId = $followUp->employee_id;
 
         $followUp->delete();

@@ -17,13 +17,60 @@ test('guests are redirected to the login page', function () {
     $response->assertRedirect(route('login'));
 });
 
+describe('access', function () {
+    test('forbids HR from listing follow-ups', function () {
+        $response = $this->actingAs(User::factory()->hr()->create())->get(route('follow-ups.index'));
+
+        $response->assertForbidden();
+    });
+
+    test('forbids HR from scheduling a follow-up', function () {
+        $user = User::factory()->hr()->create();
+        $employee = Employee::factory()->create(['company_id' => $user->company_id]);
+
+        $response = $this->actingAs($user)->post(route('follow-ups.store'), [
+            'employee_id' => $employee->id,
+            'reason' => 'Review lipid panel',
+            'due_on' => '2026-12-05',
+        ]);
+
+        $response->assertForbidden();
+        $this->assertDatabaseCount('follow_ups', 0);
+    });
+
+    test('forbids an employee from closing their own follow-up', function () {
+        $user = User::factory()->create();
+        $followUp = FollowUp::factory()->for(Employee::factory()->state(['user_id' => $user->id]))->create();
+
+        $response = $this->actingAs($user)->put(route('follow-ups.update', $followUp), [
+            'employee_id' => $followUp->employee_id,
+            'reason' => $followUp->reason,
+            'due_on' => '2026-12-01',
+            'status' => 'completed',
+        ]);
+
+        $response->assertForbidden();
+        expect($followUp->fresh()->status)->toBe(FollowUpStatus::Pending);
+    });
+
+    test('forbids an employee from deleting their own follow-up', function () {
+        $user = User::factory()->create();
+        $followUp = FollowUp::factory()->for(Employee::factory()->state(['user_id' => $user->id]))->create();
+
+        $response = $this->actingAs($user)->delete(route('follow-ups.destroy', $followUp));
+
+        $response->assertForbidden();
+        $this->assertModelExists($followUp);
+    });
+});
+
 describe('index', function () {
     test('lists pending follow-ups soonest due first by default', function () {
         $later = FollowUp::factory()->create(['due_on' => '2026-12-10']);
         $sooner = FollowUp::factory()->create(['due_on' => '2026-12-01']);
         FollowUp::factory()->completed()->create();
 
-        $response = $this->actingAs(User::factory()->create())->get(route('follow-ups.index'));
+        $response = $this->actingAs(User::factory()->medicalStaff()->create())->get(route('follow-ups.index'));
 
         $response->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('follow-ups/index')
@@ -38,7 +85,7 @@ describe('index', function () {
         FollowUp::factory()->create(['due_on' => '2026-11-25']);
         FollowUp::factory()->completed()->create(['due_on' => '2026-11-01']);
 
-        $response = $this->actingAs(User::factory()->create())
+        $response = $this->actingAs(User::factory()->medicalStaff()->create())
             ->get(route('follow-ups.index', ['status' => 'overdue']));
 
         $response->assertInertia(fn (Assert $page) => $page
@@ -49,7 +96,7 @@ describe('index', function () {
     });
 
     test('rejects an unknown status filter', function () {
-        $response = $this->actingAs(User::factory()->create())
+        $response = $this->actingAs(User::factory()->medicalStaff()->create())
             ->get(route('follow-ups.index', ['status' => 'bogus']));
 
         $response->assertSessionHasErrors('status');
@@ -60,7 +107,7 @@ describe('create', function () {
     test('prefills the employee from the health check it was opened from', function () {
         $healthCheck = HealthCheck::factory()->create();
 
-        $response = $this->actingAs(User::factory()->create())
+        $response = $this->actingAs(User::factory()->medicalStaff()->create())
             ->get(route('follow-ups.create', ['health_check_id' => $healthCheck->id]));
 
         $response->assertOk()->assertInertia(fn (Assert $page) => $page
@@ -75,7 +122,7 @@ describe('store', function () {
         $employee = Employee::factory()->create();
         $healthCheck = HealthCheck::factory()->for($employee)->create();
 
-        $response = $this->actingAs(User::factory()->create())->post(route('follow-ups.store'), [
+        $response = $this->actingAs(User::factory()->medicalStaff()->create())->post(route('follow-ups.store'), [
             'employee_id' => $employee->id,
             'health_check_id' => $healthCheck->id,
             'reason' => 'Review lipid panel',
@@ -93,7 +140,7 @@ describe('store', function () {
         $employee = Employee::factory()->create();
         $otherEmployeesCheck = HealthCheck::factory()->create();
 
-        $response = $this->actingAs(User::factory()->create())->post(route('follow-ups.store'), [
+        $response = $this->actingAs(User::factory()->medicalStaff()->create())->post(route('follow-ups.store'), [
             'employee_id' => $employee->id,
             'health_check_id' => $otherEmployeesCheck->id,
             'reason' => 'Review lipid panel',
@@ -107,7 +154,7 @@ describe('store', function () {
     });
 
     test('requires the employee, reason, and due date', function () {
-        $response = $this->actingAs(User::factory()->create())->post(route('follow-ups.store'), []);
+        $response = $this->actingAs(User::factory()->medicalStaff()->create())->post(route('follow-ups.store'), []);
 
         $response->assertSessionHasErrors(['employee_id', 'reason', 'due_on']);
     });
@@ -117,7 +164,7 @@ describe('update', function () {
     test('records today as the completion date when none is given', function () {
         $followUp = FollowUp::factory()->create();
 
-        $response = $this->actingAs(User::factory()->create())->put(route('follow-ups.update', $followUp), [
+        $response = $this->actingAs(User::factory()->medicalStaff()->create())->put(route('follow-ups.update', $followUp), [
             'employee_id' => $followUp->employee_id,
             'reason' => $followUp->reason,
             'due_on' => '2026-12-01',
@@ -135,7 +182,7 @@ describe('update', function () {
     test('keeps the completion date that was entered', function () {
         $followUp = FollowUp::factory()->create();
 
-        $this->actingAs(User::factory()->create())->put(route('follow-ups.update', $followUp), [
+        $this->actingAs(User::factory()->medicalStaff()->create())->put(route('follow-ups.update', $followUp), [
             'employee_id' => $followUp->employee_id,
             'reason' => $followUp->reason,
             'due_on' => '2026-12-01',
@@ -149,7 +196,7 @@ describe('update', function () {
     test('clears the completion date when reopened', function () {
         $followUp = FollowUp::factory()->completed()->create();
 
-        $this->actingAs(User::factory()->create())->put(route('follow-ups.update', $followUp), [
+        $this->actingAs(User::factory()->medicalStaff()->create())->put(route('follow-ups.update', $followUp), [
             'employee_id' => $followUp->employee_id,
             'reason' => $followUp->reason,
             'due_on' => '2026-12-01',
@@ -167,7 +214,7 @@ describe('destroy', function () {
     test('deletes the follow-up', function () {
         $followUp = FollowUp::factory()->create();
 
-        $response = $this->actingAs(User::factory()->create())->delete(route('follow-ups.destroy', $followUp));
+        $response = $this->actingAs(User::factory()->medicalStaff()->create())->delete(route('follow-ups.destroy', $followUp));
 
         $response->assertRedirect(route('employees.show', $followUp->employee_id));
         $this->assertModelMissing($followUp);

@@ -20,8 +20,60 @@ export type EmployeeOption = {
     full_name: string;
 };
 
+export type Company = {
+    id: number;
+    name: string;
+};
+
+export type Clearance = {
+    value:
+        | 'cleared'
+        | 'restricted'
+        | 'not_cleared'
+        | 'needs_follow_up'
+        | 'pending';
+    label: string;
+};
+
+/** What HR sees of a health check: when, what kind, and whether the employee is cleared. */
+export type ClearanceSummary = {
+    id: number;
+    checked_on: string;
+    type: string;
+    clearance: Clearance;
+};
+
+/** What HR sees of a follow-up: when it is due and whether it happened, without the medical reason. */
+export type FollowUpScheduleItem = {
+    id: number;
+    due_on: string;
+    status: string;
+    completed_on: string | null;
+    is_overdue: boolean;
+};
+
+export type EmployeeListRow = {
+    id: number;
+    employee_number: string;
+    full_name: string;
+    department: string | null;
+    position: string | null;
+    is_active: boolean;
+    company: string | null;
+    pending_follow_ups_count: number;
+    overdue_follow_ups_count: number;
+    latest_check: {
+        checked_on: string;
+        type: string;
+        clearance: Clearance;
+        result: string | null;
+    } | null;
+};
+
 export type Employee = EmployeeOption & {
     user_id: number | null;
+    company_id: number | null;
+    company?: Company | null;
     department: string | null;
     position: string | null;
     email: string | null;

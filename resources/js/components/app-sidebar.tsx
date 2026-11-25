@@ -1,10 +1,12 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import {
     BookOpen,
     CalendarClock,
     FolderGit2,
+    HeartPulse,
     LayoutGrid,
     Stethoscope,
+    UserCog,
     Users,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
@@ -21,33 +23,60 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
-import { index as employeesIndex } from '@/routes/employees';
+import {
+    index as employeesIndex,
+    show as showEmployee,
+} from '@/routes/employees';
 import { index as followUpsIndex } from '@/routes/follow-ups';
 import { index as healthChecksIndex } from '@/routes/health-checks';
-import type { NavItem } from '@/types';
+import { index as usersIndex } from '@/routes/users';
+import type { NavItem, Permissions } from '@/types';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Employees',
-        href: employeesIndex(),
-        icon: Users,
-    },
-    {
-        title: 'Health checks',
-        href: healthChecksIndex(),
-        icon: Stethoscope,
-    },
-    {
-        title: 'Follow-ups',
-        href: followUpsIndex(),
-        icon: CalendarClock,
-    },
-];
+/**
+ * Build the sidebar from what the signed-in user may open; the server enforces the same rules.
+ */
+function navItemsFor(can: Permissions): NavItem[] {
+    const items: NavItem[] = [
+        { title: 'Dashboard', href: dashboard(), icon: LayoutGrid },
+    ];
+
+    if (can.ownEmployeeId !== null) {
+        items.push({
+            title: 'My health record',
+            href: showEmployee(can.ownEmployeeId),
+            icon: HeartPulse,
+        });
+    }
+
+    if (can.viewEmployees) {
+        items.push({ title: 'Employees', href: employeesIndex(), icon: Users });
+    }
+
+    if (can.manageHealthRecords) {
+        items.push(
+            {
+                title: 'Health checks',
+                href: healthChecksIndex(),
+                icon: Stethoscope,
+            },
+            {
+                title: 'Follow-ups',
+                href: followUpsIndex(),
+                icon: CalendarClock,
+            },
+        );
+    }
+
+    if (can.manageUsers) {
+        items.push({
+            title: 'User accounts',
+            href: usersIndex(),
+            icon: UserCog,
+        });
+    }
+
+    return items;
+}
 
 const footerNavItems: NavItem[] = [
     {
@@ -63,6 +92,8 @@ const footerNavItems: NavItem[] = [
 ];
 
 export function AppSidebar() {
+    const { auth } = usePage().props;
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -78,7 +109,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMain items={navItemsFor(auth.can)} />
             </SidebarContent>
 
             <SidebarFooter>

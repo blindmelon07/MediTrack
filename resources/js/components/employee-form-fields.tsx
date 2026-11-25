@@ -1,19 +1,54 @@
 import FormField, { FormSection } from '@/components/form-field';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
-import type { Employee } from '@/types';
+import type { Company, Employee } from '@/types';
 
 export default function EmployeeFormFields({
     employee,
+    companies,
     errors,
 }: {
     employee?: Employee;
+    companies: Company[];
     errors: Record<string, string | undefined>;
 }) {
+    const companyLocked = companies.length === 1;
+
     return (
         <>
             <FormSection title="Employee details">
                 <div className="grid gap-4 md:grid-cols-3">
+                    <FormField
+                        id="company_id"
+                        label="Company"
+                        required
+                        error={errors.company_id}
+                        hint={
+                            companyLocked
+                                ? 'HR can only add employees to their own company.'
+                                : undefined
+                        }
+                    >
+                        <NativeSelect
+                            id="company_id"
+                            name="company_id"
+                            required
+                            disabled={companyLocked}
+                            defaultValue={
+                                employee?.company_id ??
+                                (companyLocked ? companies[0].id : '')
+                            }
+                        >
+                            <option value="" disabled>
+                                Select a company
+                            </option>
+                            {companies.map((company) => (
+                                <option key={company.id} value={company.id}>
+                                    {company.name}
+                                </option>
+                            ))}
+                        </NativeSelect>
+                    </FormField>
                     <FormField
                         id="employee_number"
                         label="Employee number"

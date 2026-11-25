@@ -12,15 +12,47 @@ class UpdateEmployeeRequest extends FormRequest
     use EmployeeValidationRules;
 
     /**
+     * Determine if the user is authorized to make this request.
+     */
+    public function authorize(): bool
+    {
+        return $this->user()->can('update', $this->employee());
+    }
+
+    /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        $this->assignHrCompany();
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
-        /** @var Employee $employee */
-        $employee = $this->route('employee');
+        return $this->employeeRules($this->employee()->id);
+    }
 
-        return $this->employeeRules($employee->id);
+    /**
+     * Get the custom messages for validator errors.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return $this->employeeMessages();
+    }
+
+    /**
+     * Get the employee being updated.
+     */
+    private function employee(): Employee
+    {
+        /** @var Employee */
+        return $this->route('employee');
     }
 }

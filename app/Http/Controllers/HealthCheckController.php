@@ -14,6 +14,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -25,6 +26,8 @@ class HealthCheckController extends Controller
      */
     public function index(Request $request): Response
     {
+        Gate::authorize('viewAny', HealthCheck::class);
+
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:100'],
             'type' => ['nullable', Rule::enum(HealthCheckType::class)],
@@ -61,6 +64,8 @@ class HealthCheckController extends Controller
      */
     public function create(Request $request): Response
     {
+        Gate::authorize('create', HealthCheck::class);
+
         $selectedEmployeeId = $request->integer('employee_id') ?: null;
 
         return Inertia::render('health-checks/create', [
@@ -118,6 +123,8 @@ class HealthCheckController extends Controller
      */
     public function show(HealthCheck $healthCheck): Response
     {
+        Gate::authorize('view', $healthCheck);
+
         $healthCheck->load([
             'employee:id,employee_number,first_name,last_name,department,position',
             'recorder:id,name',
@@ -127,6 +134,7 @@ class HealthCheckController extends Controller
 
         return Inertia::render('health-checks/show', [
             'healthCheck' => $healthCheck,
+            'can' => ['update' => Gate::allows('update', $healthCheck)],
             'healthCheckTypes' => HealthCheckType::options(),
             'healthCheckResults' => HealthCheckResult::options(),
             'followUpStatuses' => FollowUpStatus::options(),
@@ -138,6 +146,8 @@ class HealthCheckController extends Controller
      */
     public function edit(HealthCheck $healthCheck): Response
     {
+        Gate::authorize('update', $healthCheck);
+
         return Inertia::render('health-checks/edit', [
             'healthCheck' => $healthCheck,
             'employees' => Employee::selectOptions($healthCheck->employee_id),
@@ -163,6 +173,8 @@ class HealthCheckController extends Controller
      */
     public function destroy(HealthCheck $healthCheck): RedirectResponse
     {
+        Gate::authorize('delete', $healthCheck);
+
         $employeeId = $healthCheck->employee_id;
 
         $healthCheck->delete();

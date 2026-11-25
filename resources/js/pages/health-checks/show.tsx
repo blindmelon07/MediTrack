@@ -43,15 +43,22 @@ export default function HealthCheckShow({
     healthCheckTypes,
     healthCheckResults,
     followUpStatuses,
+    can,
 }: {
     healthCheck: HealthCheck;
     healthCheckTypes: Option[];
     healthCheckResults: ResultOption[];
     followUpStatuses: Option[];
+    can: { update: boolean };
 }) {
     setLayoutProps({
         breadcrumbs: [
-            { title: 'Health checks', href: index() },
+            can.update
+                ? { title: 'Health checks', href: index() }
+                : {
+                      title: 'My health record',
+                      href: showEmployee(healthCheck.employee_id),
+                  },
             {
                 title: formatDate(healthCheck.checked_on),
                 href: show(healthCheck.id),
@@ -83,26 +90,28 @@ export default function HealthCheckShow({
                         )
                     }
                     actions={
-                        <>
-                            <Button variant="outline" asChild>
-                                <Link href={edit(healthCheck.id)}>
-                                    <Pencil /> Edit
-                                </Link>
-                            </Button>
-                            <Button variant="outline" asChild>
-                                <Link
-                                    href={destroy(healthCheck.id)}
-                                    as="button"
-                                    onBefore={() =>
-                                        confirm(
-                                            'Delete this health check and its attachments? Its follow-ups will be kept.',
-                                        )
-                                    }
-                                >
-                                    <Trash2 /> Delete
-                                </Link>
-                            </Button>
-                        </>
+                        can.update && (
+                            <>
+                                <Button variant="outline" asChild>
+                                    <Link href={edit(healthCheck.id)}>
+                                        <Pencil /> Edit
+                                    </Link>
+                                </Button>
+                                <Button variant="outline" asChild>
+                                    <Link
+                                        href={destroy(healthCheck.id)}
+                                        as="button"
+                                        onBefore={() =>
+                                            confirm(
+                                                'Delete this health check and its attachments? Its follow-ups will be kept.',
+                                            )
+                                        }
+                                    >
+                                        <Trash2 /> Delete
+                                    </Link>
+                                </Button>
+                            </>
+                        )
                     }
                 />
 
@@ -186,15 +195,19 @@ export default function HealthCheckShow({
                         <h2 className="text-base font-medium">
                             Follow-ups ({followUps.length})
                         </h2>
-                        <Button variant="outline" size="sm" asChild>
-                            <Link
-                                href={createFollowUp({
-                                    query: { health_check_id: healthCheck.id },
-                                })}
-                            >
-                                <CalendarPlus /> Schedule follow-up
-                            </Link>
-                        </Button>
+                        {can.update && (
+                            <Button variant="outline" size="sm" asChild>
+                                <Link
+                                    href={createFollowUp({
+                                        query: {
+                                            health_check_id: healthCheck.id,
+                                        },
+                                    })}
+                                >
+                                    <CalendarPlus /> Schedule follow-up
+                                </Link>
+                            </Button>
+                        )}
                     </div>
                     {followUps.length === 0 ? (
                         <p className="text-sm text-muted-foreground">
@@ -223,11 +236,19 @@ export default function HealthCheckShow({
                                                 ` · Assigned to ${followUp.assignee.name}`}
                                         </p>
                                     </div>
-                                    <Button variant="outline" size="sm" asChild>
-                                        <Link href={editFollowUp(followUp.id)}>
-                                            Update
-                                        </Link>
-                                    </Button>
+                                    {can.update && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            asChild
+                                        >
+                                            <Link
+                                                href={editFollowUp(followUp.id)}
+                                            >
+                                                Update
+                                            </Link>
+                                        </Button>
+                                    )}
                                 </li>
                             ))}
                         </ul>
@@ -267,79 +288,83 @@ export default function HealthCheckShow({
                                                 <Download /> Download
                                             </a>
                                         </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            asChild
-                                        >
-                                            <Link
-                                                href={destroyAttachment(
-                                                    attachment.id,
-                                                )}
-                                                as="button"
-                                                preserveScroll
-                                                onBefore={() =>
-                                                    confirm(
-                                                        `Delete ${attachment.original_name}?`,
-                                                    )
-                                                }
-                                                aria-label={`Delete ${attachment.original_name}`}
+                                        {can.update && (
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                asChild
                                             >
-                                                <Trash2 />
-                                            </Link>
-                                        </Button>
+                                                <Link
+                                                    href={destroyAttachment(
+                                                        attachment.id,
+                                                    )}
+                                                    as="button"
+                                                    preserveScroll
+                                                    onBefore={() =>
+                                                        confirm(
+                                                            `Delete ${attachment.original_name}?`,
+                                                        )
+                                                    }
+                                                    aria-label={`Delete ${attachment.original_name}`}
+                                                >
+                                                    <Trash2 />
+                                                </Link>
+                                            </Button>
+                                        )}
                                     </div>
                                 </li>
                             ))}
                         </ul>
                     )}
-                    <Form
-                        {...storeAttachments.form(healthCheck.id)}
-                        options={{ preserveScroll: true }}
-                        resetOnSuccess
-                        className="flex flex-col gap-2 sm:flex-row sm:items-start"
-                    >
-                        {({ processing, errors, progress }) => (
-                            <>
-                                <div className="flex-1 space-y-1">
-                                    <Input
-                                        name="attachments[]"
-                                        type="file"
-                                        multiple
-                                        accept=".pdf,.jpg,.jpeg,.png"
-                                        aria-label="Files to upload"
-                                    />
-                                    <p className="text-xs text-muted-foreground">
-                                        PDF, JPG, or PNG, up to 10 MB each.
-                                    </p>
-                                    <InputError
-                                        message={
-                                            errors.attachments ??
-                                            Object.entries(errors).find(
-                                                ([key]) =>
-                                                    key.startsWith(
-                                                        'attachments.',
-                                                    ),
-                                            )?.[1]
-                                        }
-                                    />
-                                    {progress && (
-                                        <progress
-                                            value={progress.percentage}
-                                            max="100"
-                                            className="w-full"
+                    {can.update && (
+                        <Form
+                            {...storeAttachments.form(healthCheck.id)}
+                            options={{ preserveScroll: true }}
+                            resetOnSuccess
+                            className="flex flex-col gap-2 sm:flex-row sm:items-start"
+                        >
+                            {({ processing, errors, progress }) => (
+                                <>
+                                    <div className="flex-1 space-y-1">
+                                        <Input
+                                            name="attachments[]"
+                                            type="file"
+                                            multiple
+                                            accept=".pdf,.jpg,.jpeg,.png"
+                                            aria-label="Files to upload"
                                         />
-                                    )}
-                                </div>
-                                <Button
-                                    variant="secondary"
-                                    disabled={processing}
-                                >
-                                    <Upload /> Upload
-                                </Button>
-                            </>
-                        )}
-                    </Form>
+                                        <p className="text-xs text-muted-foreground">
+                                            PDF, JPG, or PNG, up to 10 MB each.
+                                        </p>
+                                        <InputError
+                                            message={
+                                                errors.attachments ??
+                                                Object.entries(errors).find(
+                                                    ([key]) =>
+                                                        key.startsWith(
+                                                            'attachments.',
+                                                        ),
+                                                )?.[1]
+                                            }
+                                        />
+                                        {progress && (
+                                            <progress
+                                                value={progress.percentage}
+                                                max="100"
+                                                className="w-full"
+                                            />
+                                        )}
+                                    </div>
+                                    <Button
+                                        variant="secondary"
+                                        disabled={processing}
+                                    >
+                                        <Upload /> Upload
+                                    </Button>
+                                </>
+                            )}
+                        </Form>
+                    )}
                 </section>
             </div>
         </>

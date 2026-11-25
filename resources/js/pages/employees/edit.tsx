@@ -3,9 +3,15 @@ import EmployeeFormFields from '@/components/employee-form-fields';
 import { PageHeader } from '@/components/form-field';
 import { Button } from '@/components/ui/button';
 import { edit, index, show, update } from '@/routes/employees';
-import type { Employee } from '@/types';
+import type { Company, Employee } from '@/types';
 
-export default function EmployeeEdit({ employee }: { employee: Employee }) {
+export default function EmployeeEdit({
+    employee,
+    companies,
+}: {
+    employee: Employee;
+    companies: Company[];
+}) {
     setLayoutProps({
         breadcrumbs: [
             { title: 'Employees', href: index() },
@@ -25,6 +31,7 @@ export default function EmployeeEdit({ employee }: { employee: Employee }) {
                         <>
                             <EmployeeFormFields
                                 employee={employee}
+                                companies={companies}
                                 errors={errors}
                             />
                             <div className="flex gap-2">

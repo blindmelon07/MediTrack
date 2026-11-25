@@ -7,6 +7,7 @@ use App\Models\HealthCheck;
 use App\Models\HealthCheckAttachment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -35,6 +36,8 @@ class HealthCheckAttachmentController extends Controller
      */
     public function show(HealthCheckAttachment $attachment): StreamedResponse
     {
+        Gate::authorize('view', $attachment->healthCheck);
+
         return Storage::disk(HealthCheckAttachment::DISK)->download($attachment->path, $attachment->original_name);
     }
 
@@ -43,6 +46,8 @@ class HealthCheckAttachmentController extends Controller
      */
     public function destroy(HealthCheckAttachment $attachment): RedirectResponse
     {
+        Gate::authorize('update', $attachment->healthCheck);
+
         $healthCheckId = $attachment->health_check_id;
 
         $attachment->delete();

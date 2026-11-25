@@ -4,6 +4,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\FollowUpController;
 use App\Http\Controllers\HealthCheckAttachmentController;
 use App\Http\Controllers\HealthCheckController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
@@ -17,6 +18,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('health-checks.attachments', HealthCheckAttachmentController::class)
         ->only(['store', 'show', 'destroy'])
         ->shallow();
+    Route::resource('users', UserController::class)->except('show');
 });
 
 require __DIR__.'/settings.php';

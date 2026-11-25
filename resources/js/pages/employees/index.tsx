@@ -1,7 +1,7 @@
-import { Form, Head, Link } from '@inertiajs/react';
+import { Form, Head, Link, usePage } from '@inertiajs/react';
 import { Plus, Search } from 'lucide-react';
 import { PageHeader } from '@/components/form-field';
-import { ResultBadge } from '@/components/medical-badges';
+import { ClearanceBadge, ResultBadge } from '@/components/medical-badges';
 import Pagination from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,36 +10,40 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { formatDate, optionLabel } from '@/lib/medical';
 import { create, index, show } from '@/routes/employees';
 import type {
-    Employee,
-    HealthCheck,
+    Company,
+    EmployeeListRow,
     Option,
     Paginated,
     ResultOption,
 } from '@/types';
 
-type EmployeeRow = Employee & {
-    latest_health_check: HealthCheck | null;
-    pending_follow_ups_count: number;
-};
-
 export default function EmployeeIndex({
     employees,
     filters,
+    companies,
     healthCheckTypes,
     healthCheckResults,
 }: {
-    employees: Paginated<EmployeeRow>;
-    filters: { search: string; status: string };
+    employees: Paginated<EmployeeListRow>;
+    filters: { search: string; status: string; company_id: number | null };
+    companies: Company[];
     healthCheckTypes: Option[];
     healthCheckResults: ResultOption[];
 }) {
+    const { auth } = usePage().props;
+    const showCompany = companies.length > 0;
+
     return (
         <>
             <Head title="Employees" />
             <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
                 <PageHeader
                     title="Employees"
-                    description="Everyone whose health checks and follow-ups the office tracks."
+                    description={
+                        auth.can.manageHealthRecords
+                            ? 'Everyone whose health checks and follow-ups the office tracks.'
+                            : 'Health clearance and follow-up status for your company. Medical details are visible to medical staff only.'
+                    }
                     actions={
                         <Button asChild>
                             <Link href={create()}>
@@ -60,11 +64,29 @@ export default function EmployeeIndex({
                         aria-label="Search employees"
                         className="sm:max-w-sm"
                     />
+                    {showCompany && (
+                        <NativeSelect
+                            name="company_id"
+                            defaultValue={filters.company_id ?? ''}
+                            aria-label="Company"
+                            className="sm:w-44"
+                            onChange={(event) =>
+                                event.currentTarget.form?.requestSubmit()
+                            }
+                        >
+                            <option value="">All companies</option>
+                            {companies.map((company) => (
+                                <option key={company.id} value={company.id}>
+                                    {company.name}
+                                </option>
+                            ))}
+                        </NativeSelect>
+                    )}
                     <NativeSelect
                         name="status"
                         defaultValue={filters.status}
                         aria-label="Employment status"
-                        className="sm:w-40"
+                        className="sm:w-36"
                         onChange={(event) =>
                             event.currentTarget.form?.requestSubmit()
                         }
@@ -85,6 +107,11 @@ export default function EmployeeIndex({
                                 <th className="px-4 py-3 font-medium">
                                     Employee
                                 </th>
+                                {showCompany && (
+                                    <th className="px-4 py-3 font-medium">
+                                        Company
+                                    </th>
+                                )}
                                 <th className="px-4 py-3 font-medium">
                                     Department
                                 </th>
@@ -92,7 +119,7 @@ export default function EmployeeIndex({
                                     Last health check
                                 </th>
                                 <th className="px-4 py-3 font-medium">
-                                    Pending follow-ups
+                                    Follow-ups
                                 </th>
                             </tr>
                         </thead>
@@ -121,6 +148,11 @@ export default function EmployeeIndex({
                                             )}
                                         </div>
                                     </td>
+                                    {showCompany && (
+                                        <td className="px-4 py-3">
+                                            {employee.company ?? '—'}
+                                        </td>
+                                    )}
                                     <td className="px-4 py-3">
                                         {employee.department ?? '—'}
                                         {employee.position && (
@@ -130,30 +162,41 @@ export default function EmployeeIndex({
                                         )}
                                     </td>
                                     <td className="px-4 py-3">
-                                        {employee.latest_health_check ? (
+                                        {employee.latest_check ? (
                                             <div className="flex flex-col items-start gap-1">
                                                 <span>
                                                     {formatDate(
-                                                        employee
-                                                            .latest_health_check
+                                                        employee.latest_check
                                                             .checked_on,
                                                     )}{' '}
                                                     ·{' '}
                                                     {optionLabel(
                                                         healthCheckTypes,
-                                                        employee
-                                                            .latest_health_check
+                                                        employee.latest_check
                                                             .type,
                                                     )}
                                                 </span>
-                                                <ResultBadge
-                                                    result={
-                                                        employee
-                                                            .latest_health_check
-                                                            .result
-                                                    }
-                                                    options={healthCheckResults}
-                                                />
+                                                {employee.latest_check
+                                                    .result ? (
+                                                    <ResultBadge
+                                                        result={
+                                                            employee
+                                                                .latest_check
+                                                                .result
+                                                        }
+                                                        options={
+                                                            healthCheckResults
+                                                        }
+                                                    />
+                                                ) : (
+                                                    <ClearanceBadge
+                                                        clearance={
+                                                            employee
+                                                                .latest_check
+                                                                .clearance
+                                                        }
+                                                    />
+                                                )}
                                             </div>
                                         ) : (
                                             <span className="text-muted-foreground">
@@ -162,25 +205,37 @@ export default function EmployeeIndex({
                                         )}
                                     </td>
                                     <td className="px-4 py-3">
-                                        {employee.pending_follow_ups_count >
-                                        0 ? (
-                                            <Badge variant="secondary">
-                                                {
-                                                    employee.pending_follow_ups_count
-                                                }
-                                            </Badge>
-                                        ) : (
-                                            <span className="text-muted-foreground">
-                                                0
-                                            </span>
-                                        )}
+                                        <div className="flex flex-wrap gap-1">
+                                            {employee.overdue_follow_ups_count >
+                                                0 && (
+                                                <Badge className="border-transparent bg-red-600 text-white dark:bg-red-700">
+                                                    {
+                                                        employee.overdue_follow_ups_count
+                                                    }{' '}
+                                                    overdue
+                                                </Badge>
+                                            )}
+                                            {employee.pending_follow_ups_count >
+                                            0 ? (
+                                                <Badge variant="secondary">
+                                                    {
+                                                        employee.pending_follow_ups_count
+                                                    }{' '}
+                                                    pending
+                                                </Badge>
+                                            ) : (
+                                                <span className="text-muted-foreground">
+                                                    None
+                                                </span>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
                             {employees.data.length === 0 && (
                                 <tr>
                                     <td
-                                        colSpan={4}
+                                        colSpan={showCompany ? 5 : 4}
                                         className="px-4 py-10 text-center text-muted-foreground"
                                     >
                                         No employees found.

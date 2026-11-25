@@ -161,7 +161,8 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // Self-registration is disabled: medical records are private, so administrators
+        // create every account (Users page, or `php artisan app:create-admin-user`).
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::twoFactorAuthentication([
