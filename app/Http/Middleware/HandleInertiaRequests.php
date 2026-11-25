@@ -46,8 +46,8 @@ class HandleInertiaRequests extends Middleware
                 'tagline' => config('meditrack.branding.tagline'),
                 'office' => config('meditrack.branding.office'),
                 'officeAddress' => config('meditrack.branding.office_address'),
-                'logo' => config('meditrack.branding.logo'),
-                'mark' => config('meditrack.branding.mark'),
+                'logo' => asset(config('meditrack.branding.logo')),
+                'mark' => asset(config('meditrack.branding.mark')),
             ],
             'auth' => [
                 'user' => $request->user(),
