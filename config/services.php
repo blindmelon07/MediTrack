@@ -35,4 +35,14 @@ return [
         ],
     ],
 
+    /*
+    | UniSMS (https://unismsapi.com) sends SMS reminders. Without a secret key,
+    | messages are written to the log instead of being sent.
+    */
+    'unisms' => [
+        'secret_key' => env('UNISMS_SECRET_KEY'),
+        'sender_id' => env('UNISMS_SENDER_ID'),
+        'base_url' => env('UNISMS_BASE_URL', 'https://unismsapi.com/api'),
+    ],
+
 ];

@@ -26,7 +26,7 @@ class EmployeeFactory extends Factory
             'department' => fake()->randomElement(['Operations', 'Finance', 'Human Resources', 'IT', 'Sales']),
             'position' => fake()->jobTitle(),
             'email' => fake()->unique()->safeEmail(),
-            'phone' => fake()->phoneNumber(),
+            'phone' => fake()->numerify('+639#########'),
             'birth_date' => fake()->dateTimeBetween('-60 years', '-20 years')->format('Y-m-d'),
             'sex' => fake()->randomElement(['male', 'female']),
             'hired_on' => fake()->dateTimeBetween('-10 years', '-1 month')->format('Y-m-d'),

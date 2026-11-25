@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\HealthCheckType;
 use App\Enums\Role;
+use App\Rules\PhilippineMobileNumber;
 use Carbon\CarbonImmutable;
 use Database\Factories\EmployeeFactory;
 use Illuminate\Database\Eloquent\Attributes\Appends;
@@ -17,6 +18,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
 
 /**
@@ -58,7 +60,7 @@ use Illuminate\Support\Carbon;
 class Employee extends Model
 {
     /** @use HasFactory<EmployeeFactory> */
-    use HasFactory;
+    use HasFactory, Notifiable;
 
     /**
      * Get the attributes that should be cast.
@@ -72,6 +74,28 @@ class Employee extends Model
             'hired_on' => 'date:Y-m-d',
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Store mobile numbers in the +639XXXXXXXXX form that UniSMS expects.
+     *
+     * @return Attribute<string|null, string|null>
+     */
+    protected function phone(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value): ?string => blank($value)
+                ? null
+                : (PhilippineMobileNumber::normalize($value) ?? trim($value)),
+        );
+    }
+
+    /**
+     * Get the mobile number SMS reminders are sent to.
+     */
+    public function routeNotificationForUnisms(): ?string
+    {
+        return $this->phone;
     }
 
     /**

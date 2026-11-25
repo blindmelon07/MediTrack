@@ -201,6 +201,31 @@ describe('store', function () {
         expect(Employee::sole()->company_id)->toBe($tripple2->id);
     });
 
+    test('stores the mobile number in the form SMS reminders need', function () {
+        $this->actingAs(User::factory()->medicalStaff()->create())->post(route('employees.store'), [
+            'company_id' => Company::value('id'),
+            'employee_number' => 'EMP-001',
+            'first_name' => 'Ana',
+            'last_name' => 'Santos',
+            'phone' => '0917 123 4567',
+        ]);
+
+        expect(Employee::sole()->phone)->toBe('+639171234567');
+    });
+
+    test('rejects a phone number that cannot receive SMS', function () {
+        $response = $this->actingAs(User::factory()->medicalStaff()->create())->post(route('employees.store'), [
+            'company_id' => Company::value('id'),
+            'employee_number' => 'EMP-001',
+            'first_name' => 'Ana',
+            'last_name' => 'Santos',
+            'phone' => '(02) 8123 4567',
+        ]);
+
+        $response->assertSessionHasErrors(['phone' => 'Enter a Philippine mobile number, for example 0917 123 4567.']);
+        $this->assertDatabaseCount('employees', 0);
+    });
+
     test('forbids employees from adding employees', function () {
         $response = $this->actingAs(User::factory()->create())->post(route('employees.store'), [
             'company_id' => Company::value('id'),

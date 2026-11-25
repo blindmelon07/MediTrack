@@ -5,6 +5,7 @@ namespace App\Concerns;
 use App\Enums\Role;
 use App\Models\Company;
 use App\Models\Employee;
+use App\Rules\PhilippineMobileNumber;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
 
@@ -32,7 +33,7 @@ trait EmployeeValidationRules
             'department' => ['nullable', 'string', 'max:100'],
             'position' => ['nullable', 'string', 'max:100'],
             'email' => ['nullable', 'string', 'email', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:50'],
+            'phone' => ['nullable', 'string', 'max:50', new PhilippineMobileNumber],
             'birth_date' => ['nullable', 'date', 'before:today'],
             'sex' => ['nullable', Rule::in(['male', 'female'])],
             'hired_on' => ['nullable', 'date'],

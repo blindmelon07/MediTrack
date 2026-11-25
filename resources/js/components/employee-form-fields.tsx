@@ -171,7 +171,10 @@ export default function EmployeeFormFields({
                 </div>
             </FormSection>
 
-            <FormSection title="Contact">
+            <FormSection
+                title="Contact"
+                description="Reminders for follow-ups and annual checks go to these. Messages never include medical details."
+            >
                 <div className="grid gap-4 md:grid-cols-3">
                     <FormField id="email" label="Email" error={errors.email}>
                         <Input
@@ -181,11 +184,18 @@ export default function EmployeeFormFields({
                             defaultValue={employee?.email ?? ''}
                         />
                     </FormField>
-                    <FormField id="phone" label="Phone" error={errors.phone}>
+                    <FormField
+                        id="phone"
+                        label="Mobile number"
+                        error={errors.phone}
+                        hint="Used for SMS reminders, e.g. 0917 123 4567."
+                    >
                         <Input
                             id="phone"
                             name="phone"
                             type="tel"
+                            inputMode="tel"
+                            placeholder="0917 123 4567"
                             defaultValue={employee?.phone ?? ''}
                         />
                     </FormField>
