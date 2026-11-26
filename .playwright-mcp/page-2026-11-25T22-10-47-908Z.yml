@@ -1,0 +1,35 @@
+- generic [ref=f3e2]:
+  - main [ref=f3e4]:
+    - generic [ref=f3e5]:
+      - generic [ref=f3e6]:
+        - img "GGHI-EmployeeTrack" [ref=f3e7]
+        - generic [ref=f3e8]:
+          - paragraph [ref=f3e9]: GGHI-EmployeeTrack
+          - paragraph [ref=f3e10]: GGHI EmployeeTrack
+      - generic [ref=f3e11]:
+        - heading "Welcome back" [level=2] [ref=f3e12]
+        - paragraph [ref=f3e13]: Log in with the account given to you by your administrator.
+      - button "Sign in with a passkey" [ref=f3e15]
+      - generic [ref=f3e16]: Or continue with email
+      - generic [ref=f3e20]:
+        - generic [ref=f3e21]:
+          - generic [ref=f3e22]:
+            - generic [ref=f3e23]: Email address
+            - textbox "Email address" [active] [ref=f3e24]:
+              - /placeholder: Enter your email
+          - generic [ref=f3e25]:
+            - generic [ref=f3e26]:
+              - generic [ref=f3e27]: Password
+              - link "Forgot your password?" [ref=f3e28] [cursor=pointer]:
+                - /url: /forgot-password
+            - generic [ref=f3e29]:
+              - textbox "Password" [ref=f3e30]:
+                - /placeholder: Enter your password
+              - button "Show password" [ref=f3e31]
+          - generic [ref=f3e35]:
+            - checkbox "Remember me" [ref=f3e36]
+            - checkbox [aria-hidden]
+            - generic [ref=f3e37]: Remember me
+          - button "Log in" [ref=f3e38]
+        - paragraph [ref=f3e39]: Authorized personnel only. All activities are recorded in the audit trail.
+  - region "Notifications alt+T"

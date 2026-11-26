@@ -1,25 +1,26 @@
-import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
-import { CalendarPlus, Download, Pencil, Trash2, Upload } from 'lucide-react';
-import DocumentPreviewPane from '@/components/document-preview-pane';
-import { PageHeader } from '@/components/form-field';
-import { documentEmployee } from '@/components/health-check-document';
-import InputError from '@/components/input-error';
-import { FollowUpStatusBadge, ResultBadge } from '@/components/medical-badges';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { formatDate, formatFileSize, optionLabel } from '@/lib/medical';
+import { Form, Head, Link, setLayoutProps, usePage } from "@inertiajs/react";
+import { CalendarPlus, Download, Pencil, Trash2, Upload } from "lucide-react";
+import AiSummaryPanel from "@/components/ai-summary-panel";
+import DocumentPreviewPane from "@/components/document-preview-pane";
+import { PageHeader } from "@/components/form-field";
+import { documentEmployee } from "@/components/health-check-document";
+import InputError from "@/components/input-error";
+import { FollowUpStatusBadge, ResultBadge } from "@/components/medical-badges";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { formatDate, formatFileSize, optionLabel } from "@/lib/medical";
 import {
     destroy as destroyAttachment,
     show as downloadAttachment,
-} from '@/routes/attachments';
-import { show as showEmployee } from '@/routes/employees';
+} from "@/routes/attachments";
+import { show as showEmployee } from "@/routes/employees";
 import {
     create as createFollowUp,
     edit as editFollowUp,
-} from '@/routes/follow-ups';
-import { destroy, edit, index, show } from '@/routes/health-checks';
-import { store as storeAttachments } from '@/routes/health-checks/attachments';
-import type { HealthCheck, Option, ResultOption } from '@/types';
+} from "@/routes/follow-ups";
+import { destroy, edit, index, show } from "@/routes/health-checks";
+import { store as storeAttachments } from "@/routes/health-checks/attachments";
+import type { HealthCheck, Option, ResultOption } from "@/types";
 
 function Detail({
     label,
@@ -32,8 +33,8 @@ function Detail({
         <div>
             <dt className="text-xs text-muted-foreground">{label}</dt>
             <dd className="text-sm whitespace-pre-line">
-                {value === null || value === undefined || value === ''
-                    ? '—'
+                {value === null || value === undefined || value === ""
+                    ? "—"
                     : value}
             </dd>
         </div>
@@ -56,9 +57,9 @@ export default function HealthCheckShow({
     setLayoutProps({
         breadcrumbs: [
             can.update
-                ? { title: 'Health checks', href: index() }
+                ? { title: "Health checks", href: index() }
                 : {
-                      title: 'My health record',
+                      title: "My health record",
                       href: showEmployee(healthCheck.employee_id),
                   },
             {
@@ -68,6 +69,7 @@ export default function HealthCheckShow({
         ],
     });
 
+    const { auth } = usePage().props;
     const employee = healthCheck.employee;
     const followUps = healthCheck.follow_ups ?? [];
     const attachments = healthCheck.attachments ?? [];
@@ -105,7 +107,7 @@ export default function HealthCheckShow({
                                         as="button"
                                         onBefore={() =>
                                             confirm(
-                                                'Delete this health check and its attachments? Its follow-ups will be kept.',
+                                                "Delete this health check and its attachments? Its follow-ups will be kept.",
                                             )
                                         }
                                     >
@@ -199,6 +201,10 @@ export default function HealthCheckShow({
                             )}
                         </section>
 
+                        {can.update && auth.can.useAi && (
+                            <AiSummaryPanel healthCheckId={healthCheck.id} />
+                        )}
+
                         <section className="space-y-3">
                             <div className="flex items-center justify-between gap-4">
                                 <h2 className="text-base font-medium">
@@ -243,7 +249,7 @@ export default function HealthCheckShow({
                                                     />
                                                 </div>
                                                 <p className="text-xs text-muted-foreground">
-                                                    Due{' '}
+                                                    Due{" "}
                                                     {formatDate(
                                                         followUp.due_on,
                                                     )}
@@ -363,7 +369,7 @@ export default function HealthCheckShow({
                                                             errors,
                                                         ).find(([key]) =>
                                                             key.startsWith(
-                                                                'attachments.',
+                                                                "attachments.",
                                                             ),
                                                         )?.[1]
                                                     }

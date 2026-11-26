@@ -1,0 +1,30 @@
+[     392ms] [LOG] 🔍 Browser logger active (MCP server detected). Posting to: http://localhost/Meditrack/public/_boost/browser-logs @ http://localhost/Meditrack/public/login:110
+[     435ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/build/assets/login-CJJtlT6_.js:1
+[     435ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/build/assets/wayfinder-JjQcV2zX.js:1
+[     435ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/build/assets/rolldown-runtime-WkwZ5CU-.js:1
+[     435ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/build/assets/button-9jS5pF-e.js:1
+[     435ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/build/assets/utils--7BylfQp.js:1
+[     435ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/build/assets/password-input-Blcm9ZFM.js:1
+[     435ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/build/assets/createLucideIcon-kuIiJ6-k.js:1
+[     436ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/build/assets/label-DFI8gxXQ.js:1
+[     436ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/build/assets/input-error-D543he0p.js:1
+[     436ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/build/assets/spinner-DcOSU9Z2.js:1
+[     436ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/build/assets/dist-BUEpCDI8.js:1
+[     436ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/build/assets/loader-circle-Dadx4p4l.js:1
+[     436ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/build/assets/passkey-verify-BPp8JgW7.js:1
+[     436ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/build/assets/react-DC7I7wGJ.js:1
+[     436ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/build/assets/text-link-CeJ7eDLG.js:1
+[     436ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/build/assets/password-9UEdU1-M.js:1
+[     436ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/build/assets/confirm-2yxDT82a.js:1
+[     436ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/build/assets/checkbox-ClusAd4g.js:1
+[     437ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/build/assets/dist-BZbQ4402.js:1
+[     437ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/build/assets/check-CUdRAYvX.js:1
+[     440ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/build/assets/instrument-sans-600-normal-B9e8oLYv.woff:1
+[     440ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/build/assets/instrument-sans-400-normal-D1W7dsQl.woff:1
+[     440ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/build/assets/instrument-sans-500-normal-Z6ESRlEs.woff:1
+[     466ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/build/assets/instrument-sans-500-normal-Dk9ku72i.woff2:1
+[     466ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/build/assets/instrument-sans-600-normal-B7fBEWYG.woff2:1
+[     467ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/build/assets/instrument-sans-400-normal-DRC__1Mx.woff2:1
+[    3489ms] [WARNING] The resource http://localhost/Meditrack/public/build/assets/instrument-sans-400-normal-DRC__1Mx.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost/Meditrack/public/login:1
+[    3489ms] [WARNING] The resource http://localhost/Meditrack/public/build/assets/instrument-sans-600-normal-B7fBEWYG.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost/Meditrack/public/login:1
+[    3489ms] [WARNING] The resource http://localhost/Meditrack/public/build/assets/instrument-sans-500-normal-Dk9ku72i.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost/Meditrack/public/login:1

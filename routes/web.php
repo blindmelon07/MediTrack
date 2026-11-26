@@ -6,8 +6,10 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\EmployeeImportController;
 use App\Http\Controllers\FollowUpController;
+use App\Http\Controllers\HealthCheckAiSummaryController;
 use App\Http\Controllers\HealthCheckAttachmentController;
 use App\Http\Controllers\HealthCheckController;
+use App\Http\Controllers\HealthCheckFollowUpController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +24,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('employees/import', [EmployeeImportController::class, 'store'])->name('employees.import.store');
     Route::resource('employees', EmployeeController::class)->except('destroy');
     Route::resource('health-checks', HealthCheckController::class);
+    Route::post('health-checks/{health_check}/ai-summary', HealthCheckAiSummaryController::class)
+        ->middleware('throttle:20,1')
+        ->name('health-checks.ai-summary');
+    Route::post('health-checks/{health_check}/follow-ups', [HealthCheckFollowUpController::class, 'store'])
+        ->name('health-checks.follow-ups.store');
     Route::resource('follow-ups', FollowUpController::class)->except('show');
     Route::resource('health-checks.attachments', HealthCheckAttachmentController::class)
         ->only(['store', 'show', 'destroy'])

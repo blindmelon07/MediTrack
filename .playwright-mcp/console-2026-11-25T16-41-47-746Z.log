@@ -1,0 +1,32 @@
+[     930ms] [LOG] 🔍 Browser logger active (MCP server detected). Posting to: http://127.0.0.1:8124/_boost/browser-logs @ http://127.0.0.1:8124/login:116
+[    3767ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_RESET @ http://127.0.0.1:8124/_boost/browser-logs:1
+[    5481ms] [LOG] 🔍 Browser logger active (MCP server detected). Posting to: http://127.0.0.1:8124/_boost/browser-logs @ http://127.0.0.1:8124/login:116
+[    5865ms] [LOG] [vite] server connection lost. Polling for restart... @ http://127.0.0.1:8124/login:203
+[    5873ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://[::1]:5173/node_modules/.vite/deps/@laravel_passkeys_react.js?v=5534ca38:1
+[    5877ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://[::1]:5173/resources/js/routes/password/confirm/index.ts:1
+[    5877ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://[::1]:5173/node_modules/.vite/deps/dist-zUBuD7ld.js?v=5534ca38:1
+[    5877ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://[::1]:5173/node_modules/.vite/deps/jsx-runtime-Bwa3DjwP.js?v=5534ca38:1
+[    5877ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://[::1]:5173/node_modules/.vite/deps/dist-5VCBCNFp.js?v=5534ca38:1
+[    5878ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://[::1]:5173/node_modules/.vite/deps/dist-xbkSXWOR.js?v=5534ca38:1
+[    5878ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://[::1]:5173/node_modules/.vite/deps/dist-CaQYdPGq.js?v=5534ca38:1
+[    5878ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://[::1]:5173/node_modules/.vite/deps/dist-C1uz3vra.js?v=5534ca38:1
+[    5878ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://[::1]:5173/node_modules/.vite/deps/dist-BhPGvKz4.js?v=5534ca38:1
+[    5878ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://[::1]:5173/node_modules/.vite/deps/clsx.js?v=5534ca38:1
+[    5878ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://[::1]:5173/node_modules/.vite/deps/tailwind-merge.js?v=5534ca38:1
+[    5878ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://[::1]:5173/node_modules/.vite/deps/@radix-ui_react-separator.js?v=5534ca38:1
+[    5881ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://[::1]:5173/resources/js/hooks/use-current-url.ts:1
+[    5882ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://[::1]:5173/resources/js/layouts/auth/auth-split-layout.tsx:1
+[    5882ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://[::1]:5173/node_modules/.vite/deps/@radix-ui_react-label.js?v=5534ca38:1
+[    5882ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://[::1]:5173/node_modules/.vite/deps/@radix-ui_react-checkbox.js?v=5534ca38:1
+[    5882ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://[::1]:5173/resources/js/layouts/app/app-sidebar-layout.tsx:1
+[    5882ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://[::1]:5173/resources/js/wayfinder/index.ts:1
+[   11370ms] [LOG] 🔍 Browser logger active (MCP server detected). Posting to: http://127.0.0.1:8124/_boost/browser-logs @ http://127.0.0.1:8124/login:116
+[   12121ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://127.0.0.1:8124/login:203
+[   50296ms] [LOG] 🔍 Browser logger active (MCP server detected). Posting to: http://127.0.0.1:8124/_boost/browser-logs @ http://127.0.0.1:8124/login:116
+[   50369ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://127.0.0.1:8124/login:203
+[   58869ms] [LOG] [vite] server connection lost. Polling for restart... @ http://127.0.0.1:8124/login:203
+[   70883ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_RESET @ http://[::1]:5173/resources/js/pages/auth/login.tsx:1
+[   70883ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_RESET @ http://[::1]:5173/@vite/client:1
+[   70889ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_RESET @ http://[::1]:5173/resources/js/app.tsx:1
+[   70891ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://[::1]:5173/resources/css/app.css:1
+[   70891ms] [LOG] 🔍 Browser logger active (MCP server detected). Posting to: http://127.0.0.1:8124/_boost/browser-logs @ http://127.0.0.1:8124/login:116

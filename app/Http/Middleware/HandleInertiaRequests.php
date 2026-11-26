@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Actions\Ai\AiAssistant;
 use App\Models\Appointment;
 use App\Models\AuditLog;
 use App\Models\Employee;
@@ -61,12 +62,12 @@ class HandleInertiaRequests extends Middleware
     /**
      * Get what the signed-in user may open, so the interface only shows reachable pages.
      *
-     * @return array{viewEmployees: bool, viewAppointments: bool, manageHealthRecords: bool, manageUsers: bool, viewAuditLog: bool, ownEmployeeId: int|null}
+     * @return array{viewEmployees: bool, viewAppointments: bool, manageHealthRecords: bool, manageUsers: bool, viewAuditLog: bool, useAi: bool, ownEmployeeId: int|null}
      */
     private function permissions(?User $user): array
     {
         if ($user === null) {
-            return ['viewEmployees' => false, 'manageHealthRecords' => false, 'manageUsers' => false, 'viewAuditLog' => false, 'viewAppointments' => false, 'ownEmployeeId' => null];
+            return ['viewEmployees' => false, 'manageHealthRecords' => false, 'manageUsers' => false, 'viewAuditLog' => false, 'useAi' => false, 'viewAppointments' => false, 'ownEmployeeId' => null];
         }
 
         return [
@@ -75,6 +76,7 @@ class HandleInertiaRequests extends Middleware
             'manageHealthRecords' => $user->managesHealthRecords(),
             'manageUsers' => $user->can('viewAny', User::class),
             'viewAuditLog' => $user->can('viewAny', AuditLog::class),
+            'useAi' => $user->managesHealthRecords() && app(AiAssistant::class)->isAvailable(),
             'ownEmployeeId' => $user->employee()->value('id'),
         ];
     }

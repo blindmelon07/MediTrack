@@ -20,6 +20,7 @@ export type Permissions = {
     manageHealthRecords: boolean;
     manageUsers: boolean;
     viewAuditLog: boolean;
+    useAi: boolean;
     ownEmployeeId: number | null;
 };
 

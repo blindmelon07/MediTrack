@@ -39,6 +39,10 @@ return [
     | UniSMS (https://unismsapi.com) sends SMS reminders. Without a secret key,
     | messages are written to the log instead of being sent.
     */
+    'anthropic' => [
+        'key' => env('ANTHROPIC_API_KEY'),
+    ],
+
     'unisms' => [
         'secret_key' => env('UNISMS_SECRET_KEY'),
         'sender_id' => env('UNISMS_SENDER_ID'),

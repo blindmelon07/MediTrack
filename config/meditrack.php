@@ -91,4 +91,22 @@ return [
         'hr_digest_day' => env('REMINDER_HR_DIGEST_DAY', 'monday'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | AI Assistance
+    |--------------------------------------------------------------------------
+    |
+    | Claude drafts summaries and follow-ups for medical staff to review. It is
+    | off until AI_ENABLED is true and ANTHROPIC_API_KEY is set. Names and
+    | contact details are removed before anything is sent, except for uploaded
+    | lab result pages, which are sent as they are.
+    |
+    */
+
+    'ai' => [
+        'enabled' => (bool) env('AI_ENABLED', false),
+        'model' => env('AI_MODEL', 'claude-opus-5-5'),
+        'effort' => env('AI_EFFORT', 'medium'),
+    ],
+
 ];

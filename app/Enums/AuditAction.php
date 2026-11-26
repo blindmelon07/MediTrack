@@ -10,6 +10,7 @@ enum AuditAction: string
     case Deleted = 'deleted';
     case Downloaded = 'downloaded';
     case Imported = 'imported';
+    case AiDrafted = 'ai_drafted';
 
     /**
      * Get the human-readable label for the action.
@@ -23,6 +24,7 @@ enum AuditAction: string
             self::Deleted => 'Deleted',
             self::Downloaded => 'Downloaded',
             self::Imported => 'Imported',
+            self::AiDrafted => 'AI drafted',
         };
     }
 

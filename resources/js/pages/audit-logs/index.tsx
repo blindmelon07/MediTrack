@@ -1,15 +1,15 @@
-import { Form, Head, Link } from '@inertiajs/react';
-import { Filter, X } from 'lucide-react';
-import { PageHeader } from '@/components/form-field';
-import Pagination from '@/components/pagination';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { NativeSelect } from '@/components/ui/native-select';
-import { index } from '@/routes/audit-logs';
-import { show as showEmployee } from '@/routes/employees';
-import type { Option, Paginated, StaffMember } from '@/types';
+import { Form, Head, Link } from "@inertiajs/react";
+import { Filter, X } from "lucide-react";
+import { PageHeader } from "@/components/form-field";
+import Pagination from "@/components/pagination";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
+import { index } from "@/routes/audit-logs";
+import { show as showEmployee } from "@/routes/employees";
+import type { Option, Paginated, StaffMember } from "@/types";
 
 type AuditLogRow = {
     id: number;
@@ -27,25 +27,27 @@ type AuditLogRow = {
 };
 
 const actionTones: Record<string, string> = {
-    viewed: 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300',
+    viewed: "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300",
     downloaded:
-        'bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300',
+        "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300",
     created:
-        'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+        "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
     updated:
-        'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
-    deleted: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
+        "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+    deleted: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
     imported:
-        'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+        "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+    ai_drafted:
+        "bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-900/40 dark:text-fuchsia-300",
 };
 
 function formatTimestamp(value: string): string {
     return new Date(value).toLocaleString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
     });
 }
 
@@ -64,7 +66,7 @@ export default function AuditLogIndex({
         from: string;
         to: string;
     };
-    filteredEmployee: AuditLogRow['employee'];
+    filteredEmployee: AuditLogRow["employee"];
     users: StaffMember[];
     actions: Option[];
 }) {
@@ -121,7 +123,7 @@ export default function AuditLogIndex({
                         <NativeSelect
                             id="user_id"
                             name="user_id"
-                            defaultValue={filters.user_id ?? ''}
+                            defaultValue={filters.user_id ?? ""}
                         >
                             <option value="">Anyone</option>
                             {users.map((user) => (
@@ -207,7 +209,7 @@ export default function AuditLogIndex({
                                     </td>
                                     <td className="px-4 py-3">
                                         <Badge
-                                            className={`border-transparent ${actionTones[log.action] ?? ''}`}
+                                            className={`border-transparent ${actionTones[log.action] ?? ""}`}
                                         >
                                             {actions.find(
                                                 (action) =>
@@ -219,15 +221,15 @@ export default function AuditLogIndex({
                                         {log.description}
                                         {log.changed_fields && (
                                             <div className="text-xs text-muted-foreground">
-                                                Fields:{' '}
+                                                Fields:{" "}
                                                 {log.changed_fields
                                                     .map((field) =>
                                                         field.replaceAll(
-                                                            '_',
-                                                            ' ',
+                                                            "_",
+                                                            " ",
                                                         ),
                                                     )
-                                                    .join(', ')}
+                                                    .join(", ")}
                                             </div>
                                         )}
                                     </td>
@@ -273,5 +275,5 @@ export default function AuditLogIndex({
 }
 
 AuditLogIndex.layout = {
-    breadcrumbs: [{ title: 'Audit log', href: index() }],
+    breadcrumbs: [{ title: "Audit log", href: index() }],
 };
